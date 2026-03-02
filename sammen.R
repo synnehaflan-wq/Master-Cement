@@ -130,6 +130,55 @@ solve_equilibrium <- function(p){
 }
 
 
+# ============================================================
+# KALIBRERING TIL BASISÅR 2024 (Reference-policy i 2024)
+# Enheter: Q og x i Mt (millioner tonn), P i €/tonn
+# Plasseres rett etter solve_equilibrium()
+# ============================================================
+
+calib_2024 <- list(
+  P_target     = 160,        # €/tonn  (BYTT til 2024-pris)
+  Q_target     = 160,        # Mt      (BYTT til 2024-forbruk/etterspørsel)
+  x_row_target = 11.369,     # Mt      (BYTT til 2024-import ROW)
+  x_no_target  = 0.132       # Mt      (BYTT til 2024-import Norge)
+)
+
+# EU-leveranse = residual (må være >= 0)
+calib_2024$x_eu_target <- calib_2024$Q_target -
+  calib_2024$x_row_target - calib_2024$x_no_target
+stopifnot(calib_2024$x_eu_target >= 0)
+
+# (1) Kalibrer A slik at Q(P_target) = Q_target
+# Q = A * P^(-eps)  =>  A = Q * P^(eps)
+Base_Parameter$A <- calib_2024$Q_target * (calib_2024$P_target ^ Base_Parameter$eps)
+
+# (2) Policy-ledd i basisåret (bruker Base_Parameter sine 2024-policyverdier)
+policy_eu_2024 <- Base_Parameter$P_CO2 * Base_Parameter$I_eu * (1 - Base_Parameter$alpha_eu) +
+  Base_Parameter$alpha_eu * Base_Parameter$C_CCS_eu -
+  Base_Parameter$P_CO2 * Base_Parameter$beta
+
+policy_no_2024 <- Base_Parameter$P_CO2 * Base_Parameter$I_no * (1 - Base_Parameter$alpha_no) +
+  Base_Parameter$alpha_no * Base_Parameter$C_CCS_no -
+  Base_Parameter$P_CO2 * Base_Parameter$beta
+
+# 2024: uten CBAM (ROW betaler bare hjemlandspris, ofte 0)
+policy_row_2024 <- Base_Parameter$P_home * Base_Parameter$I_row
+
+# (3) Direkte C0-kalibrering: P_target = C0 + C1*x_target + policy
+Base_Parameter$C0_eu  <- calib_2024$P_target - Base_Parameter$C1_eu  * calib_2024$x_eu_target  - policy_eu_2024
+Base_Parameter$C0_no  <- calib_2024$P_target - Base_Parameter$C1_no  * calib_2024$x_no_target  - policy_no_2024
+Base_Parameter$C0_row <- calib_2024$P_target - Base_Parameter$C1_row * calib_2024$x_row_target - policy_row_2024
+
+# (4) Sjekk basisåret
+eq_2024_check <- solve_equilibrium(Base_Parameter)
+
+cat("\n===== SJEKK BASISÅR 2024 (kalibrert) =====\n")
+cat("P (modell):", round(eq_2024_check$P, 4), " | P_target:", calib_2024$P_target, "\n")
+cat("Q (modell):", round(eq_2024_check$Q, 4), " | Q_target:", calib_2024$Q_target, "\n")
+cat("x_eu (modell):", round(eq_2024_check$x_eu, 4), " | x_eu_target:", calib_2024$x_eu_target, "\n")
+cat("x_no (modell):", round(eq_2024_check$x_no, 4), " | x_no_target:", calib_2024$x_no_target, "\n")
+cat("x_row (modell):", round(eq_2024_check$x_row, 4), " | x_row_target:", calib_2024$x_row_target, "\n")
+cat("=========================================\n\n")
 #__________________________________________________________
 
 # Senarioer
