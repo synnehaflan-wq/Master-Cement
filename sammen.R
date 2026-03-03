@@ -10,11 +10,11 @@ Base_Parameter <- list(
   ## Karbonpriser
   P_CO2  = 75,          # P_CO2: karbonpris i EU ETS (€/tCO2)
   P_home = 0,           # P_home: karbonpris i eksportlandet/ROW (€/tCO2)
-  
+   
   ## Utslippsintensitet
   I_eu  = 0.60,         # I_eu: utslippsintensitet EU (tCO2 per tonn sement)
-  I_no  = 0.55,         # I_no: utslippsintensitet Norge (tCO2 per tonn sement)
-  I_row = 0.70,         # I_row: utslippsintensitet ROW (tCO2 per tonn sement)
+  I_no  = 0.60,         # I_no: utslippsintensitet Norge (tCO2 per tonn sement)
+  I_row = 0.60,         # I_row: utslippsintensitet ROW (tCO2 per tonn sement)
   
   ## CCS (karbonfangst og -lagring)
   alpha_eu = 0.00,      # α_eu: fangstandel EU (0–1) = andel utslipp fanget med CCS
@@ -23,17 +23,17 @@ Base_Parameter <- list(
   C_CCS_no = 90,        # C_CCS_no: CCS-kostnad Norge (€/tonn sement)
   
   ## Gratiskvoter (output-basert tildeling)
-  beta = 0.00,          # β: gratistildeling (tCO2 i gratiskvoter per tonn sement) -> verdi: P_CO2*β (€/tonn)
+  beta = 0.20,          # β: gratistildeling (tCO2 i gratiskvoter per tonn sement) -> verdi: P_CO2*β (€/tonn)
   
   ## Kostnadsparametere i marginalkostnad: MC_r(x) = C0_r + C1_r*x + (policyledd)
   C0_eu  = 50,          # C0_eu: basekostnad EU (€/tonn) – konstantledd i MC
-  C1_eu  = 0.00005,     # C1_eu: helning EU (€/tonn^2) – økende MC når produksjon øker
+  C1_eu  = 1.1 ,   # C1_eu: helning EU (€/tonn^2) – økende MC når produksjon øker
   
   C0_no  = 55,          # C0_no: basekostnad Norge (€/tonn)
-  C1_no  = 0.00005,     # C1_no: helning Norge (€/tonn^2)
+  C1_no  = 1.1  ,     # C1_no: helning Norge (€/tonn^2)
   
   C0_row = 45,          # C0_row: basekostnad ROW (€/tonn)
-  C1_row = 0.00005      # C1_row: helning ROW (€/tonn^2)
+  C1_row = 1.1        # C1_row: helning ROW (€/tonn^2)
 )
 
 
@@ -58,12 +58,10 @@ MC_no <- function(x, p){ #Norge sin MC
     p$P_CO2 * p$beta
 }
 
-
-MC_row <- function(x, p){ #Resten av verden sin MC
+MC_row <- function(x, p){  #resten av verden sin MC
   p$C0_row +
     p$C1_row * x +
-    p$P_home * p$I_row +
-    (p$P_CO2 - p$P_home) * p$I_row
+    p$P_home * p$I_row
 }
 
 ## Etterspørsels likning
@@ -140,7 +138,7 @@ calib_2024 <- list(
   P_target     = 160,        # €/tonn  (BYTT til 2024-pris)
   Q_target     = 160,        # Mt      (BYTT til 2024-forbruk/etterspørsel)
   x_row_target = 11.369,     # Mt      (BYTT til 2024-import ROW)
-  x_no_target  = 0.132       # Mt      (BYTT til 2024-import Norge)
+  x_no_target  = 1.132       # Mt      (BYTT til 2024-Norge forbruk)
 )
 
 # EU-leveranse = residual (må være >= 0)
