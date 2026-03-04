@@ -23,7 +23,9 @@ Base_Parameter <- list(
   C_CCS_no = 90,        # C_CCS_no: CCS-kostnad Norge (€/tonn sement)
   
   ## Gratiskvoter (output-basert tildeling)
-  beta = 0.20,          # β: gratistildeling (tCO2 i gratiskvoter per tonn sement) -> verdi: P_CO2*β (€/tonn)
+  beta = 0.20,  # β: gratistildeling (tCO2 i gratiskvoter per tonn sement) -> verdi: P_CO2*β (€/tonn)
+  
+ gamma_cbam = 0,   # 0 = ingen CBAM i basisåret, 1 = CBAM på # vet ikke om dette funker men variabel for å 1 ha CBAM på eller 0 ikke CBAM
   
   ## Kostnadsparametere i marginalkostnad: MC_r(x) = C0_r + C1_r*x + (policyledd)
   C0_eu  = 50,          # C0_eu: basekostnad EU (€/tonn) – konstantledd i MC
@@ -61,8 +63,8 @@ MC_no <- function(x, p){ #Norge sin MC
 MC_row <- function(x, p){  #resten av verden sin MC
   p$C0_row +
     p$C1_row * x +
-    p$P_home * p$I_row
-}
+    p$gamma_cbam * p$P_CO2 * p$I_row  #fikse dette imorgen  dette kan fungere som referanse senario men den vil ikke ta med kvotepris ettersom P_home,men midlertidig løsning for å få frem 
+}  
 
 ## Etterspørsels likning
 Qd <- function(P, p){
