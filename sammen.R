@@ -19,8 +19,8 @@ Base_Parameter <- list(
   ## CCS (karbonfangst og -lagring)
   alpha_eu = 0.00,      # α_eu: fangstandel EU (0–1) = andel utslipp fanget med CCS
   alpha_no = 0.42,      # α_no: fangstandel Norge (0–1)
-  C_CCS_eu = 80,        # C_CCS_eu: CCS-kostnad EU (€/tonn sement) – fangst+transport+lagring
-  C_CCS_no = 90,        # C_CCS_no: CCS-kostnad Norge (€/tonn sement)
+  C_CCS_eu = 250,        # C_CCS_eu: CCS-kostnad EU (€/tonn sement) – fangst+transport+lagring
+  C_CCS_no = 250,        # C_CCS_no: CCS-kostnad Norge (€/tonn sement)
   
   ## Gratiskvoter (output-basert tildeling)
   beta = 0.20,  # β: gratistildeling (tCO2 i gratiskvoter per tonn sement) -> verdi: P_CO2*β (€/tonn)
@@ -29,13 +29,13 @@ Base_Parameter <- list(
   
   ## Kostnadsparametere i marginalkostnad: MC_r(x) = C0_r + C1_r*x + (policyledd)
   C0_eu  = 50,          # C0_eu: basekostnad EU (€/tonn) – konstantledd i MC
-  C1_eu  = 1.1 ,   # C1_eu: helning EU (€/tonn^2) – økende MC når produksjon øker
+  C1_eu  = 0.5 ,   # C1_eu: helning EU (€/tonn^2) – økende MC når produksjon øker
   
   C0_no  = 55,          # C0_no: basekostnad Norge (€/tonn)
-  C1_no  = 1.1  ,     # C1_no: helning Norge (€/tonn^2)
+  C1_no  = 2.5  ,     # C1_no: helning Norge (€/tonn^2)
   
   C0_row = 45,          # C0_row: basekostnad ROW (€/tonn)
-  C1_row = 1.1        # C1_row: helning ROW (€/tonn^2)
+  C1_row = 3.0        # C1_row: helning ROW (€/tonn^2)
 )
 
 
