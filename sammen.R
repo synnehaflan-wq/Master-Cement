@@ -23,7 +23,7 @@ Base_Parameter <- list(
   C_CCS_no = 250,        # C_CCS_no: CCS-kostnad Norge (€/tonn sement)
   
   ## Gratiskvoter (output-basert tildeling)
-  beta = 0.20,  # β: gratistildeling (tCO2 i gratiskvoter per tonn sement) -> verdi: P_CO2*β (€/tonn)
+  beta = 0.40,  # β: gratistildeling (tCO2 i gratiskvoter per tonn sement) -> verdi: P_CO2*β (€/tonn)
   
  gamma_cbam = 0,   # 0 = ingen CBAM i basisåret, 1 = CBAM på # vet ikke om dette funker men variabel for å 1 ha CBAM på eller 0 ikke CBAM
   
@@ -138,7 +138,7 @@ solve_equilibrium <- function(p){
 
 calib_2024 <- list(
   P_target     = 160,        # €/tonn  (BYTT til 2024-pris)
-  Q_target     = 160,        # Mt      (BYTT til 2024-forbruk/etterspørsel)
+  Q_target     = 327.7,        # Mt      (BYTT til 2024-forbruk/etterspørsel) er 2025 tall etter fravør av 
   x_row_target = 11.369,     # Mt      (BYTT til 2024-import ROW)
   x_no_target  = 1.132       # Mt      (BYTT til 2024-Norge forbruk)
 )
@@ -222,7 +222,7 @@ Scenario_BaU$alpha_no <- 0     # Ingen CCS i Norge
 Scenario_Reference <- Base_Parameter
 
 Scenario_Reference$P_CO2 <- 75        # EU ETS aktiv
-Scenario_Reference$beta <- 0.2        # Gratiskvoter (eksempelverdi)
+Scenario_Reference$beta <- 0.4        # Gratiskvoter (eksempelverdi)
 Scenario_Reference$alpha_eu <- 0      # Ingen CCS i EU
 Scenario_Reference$alpha_no <- 0.42   # CCS i Norge
 Scenario_Reference$P_home <- 0        # Ingen karbonpris i ROW
@@ -322,6 +322,6 @@ path_BaU <- simulate_path(Scenario_BaU, "BaU", year_start = 2025, year_end = 203
 path_REF <- simulate_path(
   Scenario_Reference, "Reference",
   year_start = 2025, year_end = 2035,
-  beta_start = 0.2, beta_end = 0,
+  beta_start = 0.4, beta_end = 0,
   cbam_on_from_2026 = FALSE   # sett TRUE hvis vil ha CBAM "på" fra 2026 (ikke gradvis kan hende vi må legge inn ledd for å få i gradevis infasing)
 )
