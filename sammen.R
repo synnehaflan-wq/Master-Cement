@@ -60,11 +60,12 @@ MC_no <- function(x, p){ #Norge sin MC
     p$P_CO2 * p$beta
 }
 
-MC_row <- function(x, p){  #resten av verden sin MC
+MC_row <- function(x, p){  # Resten av verden sin MC
   p$C0_row +
     p$C1_row * x +
-    p$gamma_cbam * p$P_CO2 * p$I_row  #fikse dette imorgen  dette kan fungere som referanse senario men den vil ikke ta med kvotepris ettersom P_home,men midlertidig løsning for å få frem 
-}  
+    p$P_home * p$I_row +
+    p$gamma_cbam * (p$P_CO2 - p$P_home) * p$I_row
+}
 
 ## Etterspørsels likning
 Qd <- function(P, p){
@@ -203,7 +204,7 @@ Scenario_BaU$P_home <- 0       # Ingen karbonpris i ROW
 Scenario_BaU$beta <- 0         # Ingen gratiskvoter
 Scenario_BaU$alpha_eu <- 0     # Ingen CCS i EU
 Scenario_BaU$alpha_no <- 0     # Ingen CCS i Norge
-
+Scenario_BaU$gamma_cbam <- 0
 
 
 ## Referanse senario
@@ -226,15 +227,62 @@ Scenario_Reference$beta <- 0.4        # Gratiskvoter (eksempelverdi)
 Scenario_Reference$alpha_eu <- 0      # Ingen CCS i EU
 Scenario_Reference$alpha_no <- 0.42   # CCS i Norge
 Scenario_Reference$P_home <- 0        # Ingen karbonpris i ROW
+Scenario_Reference$gamma_cbam <- 0
+
+
+# ------------------------------------------------------------
+# Scenario 1:
+# - EU ETS videreføres
+# - Gratiskvoter fases helt ut
+# - CBAM innføres på import til EU
+# - Norge har CCS
+# - EU har ikke CCS
+#
+# Økonomisk tolkning:
+# EU-produsenter møter full karbonkostnad fordi gratiskvotene forsvinner.
+# Norske produsenter møter også karbonpris, men får lavere effektive utslipp
+# fordi CCS reduserer andelen utslipp som må betales for.
+# Import fra ROW blir ilagt CBAM, slik at importørene møter en karbonkostnad
+# tilsvarende EU ETS ved eksport til EU-markedet.
+# ============================================================
+
+Scenario_1 <- Base_Parameter
+
+# EU ETS videreføres
+Scenario_1$P_CO2 <- 75
+
+# Ingen gratiskvoter i selve scenarioet (de fases ut i simuleringsbanen)
+Scenario_1$beta <- 0
+
+# CCS:
+# EU har ikke CCS
+Scenario_1$alpha_eu <- 0
+
+# Norge har CCS
+Scenario_1$alpha_no <- 0.42
+
+# Ingen hjemlig karbonpris i ROW
+Scenario_1$P_home <- 0
+
+# CBAM-status i basis for scenarioet
+# Vi setter 0 her og lar simulate_path styre når CBAM slås på
+Scenario_1$gamma_cbam <- 0
+
+
 
 
 #_____________________________________________________________________
 # SIMULATE_PATH(): tidsserie 2025–2035 (serie av statiske likevekter)
-# - Vi simulerer ett scenario år for år
-# - Hvert år: vi oppdaterer policy-parametere (typisk beta, evt. alpha_eu)
-# - Vi løser likevekt for hvert år og lagrer resultater
+# --------------------------------------------------------------
+# Vi simulerer ett scenario år for år.
 #
-# Dette gir en tabell dere kan plotte (pris, produksjon, import, osv.)
+# Hvert år gjør modellen følgende:
+# 1. Oppdaterer policy-variabler (beta, alpha_eu, gamma_cbam)
+# 2. Løser markedslikevekten gitt disse parameterne
+# 3. Lagrer resultatene (pris, produksjon, import osv.)
+#
+# Resultatet blir en tabell med én rad per år som kan brukes til
+# grafer eller videre analyse.
 
 simulate_path <- function(par_base,
                           scenario_name,
@@ -243,85 +291,185 @@ simulate_path <- function(par_base,
                           beta_start = NULL,
                           beta_end = NULL,
                           alpha_eu_path = NULL,
-                          cbam_on_from_2026 = FALSE){
+                          gamma_cbam_path = NULL){
   
+  # Lager vektor med alle år i simuleringen
   years <- year_start:year_end
+  
+  # Antall år
   n <- length(years)
   
   
-  # 1) Lag beta-bane hvis ønskelig(mulig nødvendig)
+  # --------------------------------------------------------------
+  # 1) Lag bane for gratiskvoter (beta)
+  # --------------------------------------------------------------
   
-  # Hvis beta_start/beta_end er oppgitt: lag lineær utfasing.
-  # Hvis ikke: behold par_base$beta konstant i alle år.
+  # Hvis start og sluttverdi er oppgitt lager vi lineær utfasing
+  # Hvis ikke holder beta seg konstant i hele perioden
+  
   if (!is.null(beta_start) && !is.null(beta_end)) {
+    
+    # lineær reduksjon av gratiskvoter
     beta_vec <- seq(beta_start, beta_end, length.out = n)
+    
   } else {
+    
+    # beta konstant
     beta_vec <- rep(par_base$beta, n)
+    
   }
   
   
-  # 2) Lag alpha_eu-bane hvis ønskelig( tror kanskje nødvendig for å få till men usikker)
+  # --------------------------------------------------------------
+  # 2) Lag bane for CCS i EU (alpha_eu)
+  # --------------------------------------------------------------
   
-  # Hvis alpha_eu_path ikke er gitt: hold alpha_eu konstant.
+  # Hvis ingen bane er spesifisert holder vi alpha_eu konstant
+  
   if (is.null(alpha_eu_path)) {
+    
     alpha_eu_vec <- rep(par_base$alpha_eu, n)
+    
   } else {
-    if (length(alpha_eu_path) != n) stop("alpha_eu_path må ha samme lengde som antall år.")
+    
+    # sikkerhetssjekk: riktig lengde
+    if (length(alpha_eu_path) != n) {
+      stop("alpha_eu_path må ha samme lengde som antall år.")
+    }
+    
     alpha_eu_vec <- alpha_eu_path
+    
   }
   
   
-  # 3) Simuler år-for-år
+  # --------------------------------------------------------------
+  # 3) Lag bane for CBAM (gamma_cbam)
+  # --------------------------------------------------------------
+  
+  # gamma_cbam = 0  → ingen CBAM
+  # gamma_cbam = 1  → CBAM aktiv
+  
+  if (is.null(gamma_cbam_path)) {
+    
+    # hvis ikke spesifisert: bruk samme verdi hele perioden
+    gamma_cbam_vec <- rep(par_base$gamma_cbam, n)
+    
+  } else {
+    
+    # sikkerhetssjekk
+    if (length(gamma_cbam_path) != n) {
+      stop("gamma_cbam_path må ha samme lengde som antall år.")
+    }
+    
+    gamma_cbam_vec <- gamma_cbam_path
+    
+  }
+  
+  
+  # --------------------------------------------------------------
+  # 4) Simuler markedet år for år
+  # --------------------------------------------------------------
   
   out <- lapply(seq_along(years), function(i){
     
-    # kopi av parameterne for dette året
+    # kopi av parameterlisten slik at vi kan endre verdier for dette året
     p <- par_base
     
-    # oppdater policy-variabler
+    
+    # --------------------------------------------------------------
+    # Oppdater policy-parametere for året
+    # --------------------------------------------------------------
+    
+    # gratiskvoter
     p$beta <- beta_vec[i]
+    
+    # CCS i EU
     p$alpha_eu <- alpha_eu_vec[i]
     
-    # CBAM: enkel av/på (ikke gradvis vi må kanskje legge inn et gamma ledd)
-    # - 2025: CBAM av (gjør (P_CO2 - P_home)=0)
-    # - 2026+: CBAM på (ROW møter EU-pris via MC_row)
-    if (cbam_on_from_2026) {
-      if (years[i] <= 2025) {
-        p$P_home <- p$P_CO2  # gir (P_CO2 - P_home)=0 -> ingen CBAM
-      } else {
-        p$P_home <- 0        # full CBAM fra 2026
-      }
-    }
+    # CBAM-status
+    p$gamma_cbam <- gamma_cbam_vec[i]
     
-    # løs likevekt
+    
+    # --------------------------------------------------------------
+    # Løs markedslikevekt
+    # --------------------------------------------------------------
+    
     eq <- solve_equilibrium(p)
     
-    # lagre resultater
+    
+    # --------------------------------------------------------------
+    # Lagre resultatene for dette året
+    # --------------------------------------------------------------
+    
     data.frame(
+      
       scenario = scenario_name,
       year = years[i],
+      
       beta = p$beta,
       alpha_eu = p$alpha_eu,
-      P = eq$P,
-      Q = eq$Q,
-      x_eu = eq$x_eu,
-      x_no = eq$x_no,
-      x_row = eq$x_row,
+      gamma_cbam = p$gamma_cbam,
+      
+      P = eq$P,     # markedspris
+      Q = eq$Q,     # total etterspørsel
+      
+      x_eu = eq$x_eu,    # EU-produksjon
+      x_no = eq$x_no,    # norsk eksport
+      x_row = eq$x_row,  # import fra resten av verden
+      
       stringsAsFactors = FALSE
+      
     )
+    
   })
   
+  
+  # --------------------------------------------------------------
+  # Slår sammen resultatene til én tabell
+  # --------------------------------------------------------------
+  
   do.call(rbind, out)
+  
 }
-
 
 # BaU: alt konstant (ingen bane nødvendig)
 path_BaU <- simulate_path(Scenario_BaU, "BaU", year_start = 2025, year_end = 2035)
 
 # Referanse: beta fases ut (beta se litt mer på)
 path_REF <- simulate_path(
-  Scenario_Reference, "Reference",
-  year_start = 2025, year_end = 2035,
-  beta_start = 0.4, beta_end = 0,
-  cbam_on_from_2026 = FALSE   # sett TRUE hvis vil ha CBAM "på" fra 2026 (ikke gradvis kan hende vi må legge inn ledd for å få i gradevis infasing)
+  Scenario_Reference,
+  "Reference",
+  year_start = 2025,
+  year_end = 2035,
+  beta_start = 0.4,
+  beta_end = 0,
+  gamma_cbam_path = c(0, rep(1, length(2026:2035)))
+)
+
+
+# ============================================================
+# KJØRING AV SCENARIO 1
+# ------------------------------------------------------------
+# Antakelser:
+# - Gratiskvoter er fjernet helt fra start, usikker på dette
+# - CBAM innføres fra 2026
+# - EU har ikke CCS
+# - Norge har CCS
+# ============================================================
+
+path_S1 <- simulate_path(
+  Scenario_1,
+  "Scenario 1",
+  year_start = 2025,
+  year_end = 2035,
+  
+  # ingen gratiskvoter
+  beta_start = 0,
+  beta_end = 0,
+  
+  # EU har ikke CCS
+  alpha_eu_path = rep(0, length(2025:2035)),
+  
+  # CBAM av i 2025, på fra 2026
+  gamma_cbam_path = c(0, rep(1, length(2026:2035)))
 )
