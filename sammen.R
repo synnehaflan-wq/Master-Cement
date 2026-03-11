@@ -38,7 +38,6 @@ Base_Parameter <- list(
   C1_row = 3.0        # C1_row: helning ROW (€/tonn^2)
 )
 
-
 #____________________________________
 
 # Likningene
@@ -182,7 +181,12 @@ cat("x_row (modell):", round(eq_2024_check$x_row, 4), " | x_row_target:", calib_
 cat("=========================================\n\n")
 #__________________________________________________________
 
-# Senarioer
+
+
+
+
+
+# Senarioer liste
 
 ## BAU (buisnis as usual) 
 # Scenario uten noen form for regulering:
@@ -230,7 +234,7 @@ Scenario_Reference$P_home <- 0        # Ingen karbonpris i ROW
 Scenario_Reference$gamma_cbam <- 0
 
 
-# ------------------------------------------------------------
+
 # Scenario 1:
 # - EU ETS videreføres
 # - Gratiskvoter fases helt ut
@@ -244,29 +248,17 @@ Scenario_Reference$gamma_cbam <- 0
 # fordi CCS reduserer andelen utslipp som må betales for.
 # Import fra ROW blir ilagt CBAM, slik at importørene møter en karbonkostnad
 # tilsvarende EU ETS ved eksport til EU-markedet.
-# ============================================================
 
 Scenario_1 <- Base_Parameter
 
 # EU ETS videreføres
 Scenario_1$P_CO2 <- 75
-
-# Ingen gratiskvoter i selve scenarioet (de fases ut i simuleringsbanen)
-Scenario_1$beta <- 0
-
-# CCS:
-# EU har ikke CCS
-Scenario_1$alpha_eu <- 0
-
-# Norge har CCS
-Scenario_1$alpha_no <- 0.42
-
-# Ingen hjemlig karbonpris i ROW
-Scenario_1$P_home <- 0
-
-# CBAM-status i basis for scenarioet
+Scenario_1$beta <- 0# Ingen gratiskvoter i selve scenarioet (de fases ut i simuleringsbanen)
+Scenario_1$alpha_eu <- 0# CCS: # EU har ikke CCS
+Scenario_1$alpha_no <- 0.42# Norge har CCS
+Scenario_1$P_home <- 0# Ingen hjemlig karbonpris i ROW
+Scenario_1$gamma_cbam <- 0# CBAM-status i basis for scenarioet
 # Vi setter 0 her og lar simulate_path styre når CBAM slås på
-Scenario_1$gamma_cbam <- 0
 
 
 
@@ -431,7 +423,9 @@ simulate_path <- function(par_base,
   do.call(rbind, out)
   
 }
-
+#=======================================================
+# Senario tabellene
+#-------------------------------------------------------
 # BaU: alt konstant (ingen bane nødvendig)
 path_BaU <- simulate_path(Scenario_BaU, "BaU", year_start = 2025, year_end = 2035)
 
@@ -446,8 +440,6 @@ path_REF <- simulate_path(
   gamma_cbam_path = c(0, rep(1, length(2026:2035)))
 )
 
-
-# ============================================================
 # KJØRING AV SCENARIO 1
 # ------------------------------------------------------------
 # Antakelser:
