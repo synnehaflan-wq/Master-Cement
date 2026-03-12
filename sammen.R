@@ -27,14 +27,18 @@ Base_Parameter <- list(
   
  gamma_cbam = 0,   # 0 = ingen CBAM i basisåret, 1 = CBAM på # vet ikke om dette funker men variabel for å 1 ha CBAM på eller 0 ikke CBAM
   
+ ## subsidie på CCS
+ S_eu = 0.65 * 84,
+ S_no = 0.65 * 84,
+ 
   ## Kostnadsparametere i marginalkostnad: MC_r(x) = C0_r + C1_r*x + (policyledd)
   C0_eu  = 50,          # C0_eu: basekostnad EU (€/tonn) – konstantledd i MC
   C1_eu  = 0.5 ,   # C1_eu: helning EU (€/tonn^2) – økende MC når produksjon øker
   
-  C0_no  = 55,          # C0_no: basekostnad Norge (€/tonn)
+  C0_no  = 50,          # C0_no: basekostnad Norge (€/tonn)
   C1_no  = 2.5  ,     # C1_no: helning Norge (€/tonn^2)
   
-  C0_row = 45,          # C0_row: basekostnad ROW (€/tonn)
+  C0_row = 50,          # C0_row: basekostnad ROW (€/tonn)
   C1_row = 3.0        # C1_row: helning ROW (€/tonn^2)
 )
 
@@ -48,7 +52,8 @@ MC_eu <- function(x, p){ #EU sin MC
     p$C1_eu * x +
     p$P_CO2 * p$I_eu * (1 - p$alpha_eu) +
     p$alpha_eu * p$C_CCS_eu -
-    p$P_CO2 * p$beta
+    p$P_CO2 * p$beta -
+    p$S_eu * p$alpha_eu
 }
 
 MC_no <- function(x, p){ #Norge sin MC
@@ -56,7 +61,8 @@ MC_no <- function(x, p){ #Norge sin MC
     p$C1_no * x +
     p$P_CO2 * p$I_no * (1 - p$alpha_no) +
     p$alpha_no * p$C_CCS_no -
-    p$P_CO2 * p$beta
+    p$P_CO2 * p$beta -
+    p$S_no * p$alpha_no
 }
 
 MC_row <- function(x, p){  # Resten av verden sin MC
@@ -167,11 +173,14 @@ Base_Parameter$A <- calib_2024$Q_target * (calib_2024$P_target ^ Base_Parameter$
 
 policy_eu_2024 <- Base_Parameter$P_CO2 * Base_Parameter$I_eu * (1 - Base_Parameter$alpha_eu) +
   Base_Parameter$alpha_eu * Base_Parameter$C_CCS_eu -
-  Base_Parameter$P_CO2 * Base_Parameter$beta
+  Base_Parameter$P_CO2 * Base_Parameter$beta -
+  Base_Parameter$S_eu * Base_Parameter$alpha_eu
+
 
 policy_no_2024 <- Base_Parameter$P_CO2 * Base_Parameter$I_no * (1 - Base_Parameter$alpha_no) +
   Base_Parameter$alpha_no * Base_Parameter$C_CCS_no -
-  Base_Parameter$P_CO2 * Base_Parameter$beta
+  Base_Parameter$P_CO2 * Base_Parameter$beta - 
+  Base_Parameter$S_no * Base_Parameter$alpha_no
 
 policy_row_2024 <- Base_Parameter$P_home * Base_Parameter$I_row +
   Base_Parameter$gamma_cbam * (Base_Parameter$P_CO2 - Base_Parameter$P_home) * Base_Parameter$I_row
@@ -209,8 +218,10 @@ cat("=========================================\n\n")
 
 
 
-
+#==============================================
 # Senarioer liste
+#===============================================
+
 
 ## BAU (buisnis as usual) 
 # Scenario uten noen form for regulering:
@@ -235,29 +246,71 @@ Scenario_BaU$alpha_no <- 0     # Ingen CCS i Norge
 Scenario_BaU$gamma_cbam <- 0
 
 
-## Referanse senario
-# - EU ETS aktiv (P_CO2 > 0)
-# - Gratiskvoter eksisterer (beta > 0)
-# - Ingen CBAM (ROW betaler ikke EU-karbonpris)
-# - Norge har CCS
-# - EU har ikke CCS
+# ============================================================
+# REFERANSESCENARIO 1
+# ------------------------------------------------------------
+# Markedssituasjon tilsvarende 2024
+#
+# - EU ETS aktiv
+# - Gratiskvoter eksisterer
+# - Ingen CBAM
+# - Ingen CCS i EU
+# - Ingen CCS i Norge
 #
 # Økonomisk tolkning:
-# EU og Norge betaler karbonpris,
-# men får delvis kompensasjon gjennom gratiskvoter.
-# Norge har lavere effektiv utslippsintensitet grunnet CCS.
-# ROW har konkurransefordel fordi de ikke betaler karbonpris.
+# Produsenter i EU og Norge møter karbonpris,
+# men mottar gratiskvoter som reduserer kostnaden.
+# Produsenter i resten av verden betaler ingen karbonpris.
+# ============================================================
 
-Scenario_Reference <- Base_Parameter
+Scenario_REF1 <- Base_Parameter
 
-Scenario_Reference$P_CO2 <- 65        # EU ETS aktiv
-Scenario_Reference$beta <- 0.4        # Gratiskvoter (eksempelverdi)
-Scenario_Reference$alpha_eu <- 0      # Ingen CCS i EU
-Scenario_Reference$alpha_no <- 0.42   # CCS i Norge
-Scenario_Reference$P_home <- 0        # Ingen karbonpris i ROW
-Scenario_Reference$gamma_cbam <- 0
+Scenario_REF1$P_CO2 <- 65
+Scenario_REF1$beta <- 0.4
+Scenario_REF1$alpha_eu <- 0
+Scenario_REF1$alpha_no <- 0
+Scenario_REF1$P_home <- 0
+Scenario_REF1$gamma_cbam <- 0
 
 
+# ============================================================
+# REFERANSESCENARIO 2
+# ------------------------------------------------------------
+# Markedssituasjon med CCS i Norge
+#
+# - EU ETS aktiv
+# - Gratiskvoter eksisterer
+# - Ingen CBAM
+# - Ingen CCS i EU
+# - CCS i Norge
+#
+# Økonomisk tolkning:
+# Norske produsenter reduserer utslipp gjennom CCS
+# og får dermed lavere effektiv karbonkostnad.
+# Alle andre rammebetingelser er de samme som i referansescenario 1.
+# ============================================================
+
+Scenario_REF2 <- Base_Parameter
+
+Scenario_REF2$P_CO2 <- 65
+Scenario_REF2$beta <- 0.4
+Scenario_REF2$alpha_eu <- 0
+Scenario_REF2$alpha_no <- 0.42
+Scenario_REF2$P_home <- 0
+Scenario_REF2$gamma_cbam <- 0
+
+# ============================================================
+# LØS LIKEVEKT FOR BASELINE-SCENARIOER
+# ============================================================
+
+eq_BaU  <- solve_equilibrium(Scenario_BaU)
+eq_REF1 <- solve_equilibrium(Scenario_REF1)
+eq_REF2 <- solve_equilibrium(Scenario_REF2)
+#==============================================================
+
+
+## tids senarioer(1-...)
+#==================================================
 
 # Scenario 1:
 # - EU ETS videreføres
