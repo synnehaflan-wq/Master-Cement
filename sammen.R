@@ -549,8 +549,8 @@ simulate_path <- function(par_base,
 path_BaU <- simulate_path(Scenario_BaU, "BaU", year_start = 2025, year_end = 2035)
 
 # Referanse: beta fases ut (beta se litt mer på)
-path_REF <- simulate_path(
-  Scenario_Reference,
+path_REF2 <- simulate_path(
+  Scenario_REF2,
   "Reference",
   year_start = 2025,
   year_end = 2035,
