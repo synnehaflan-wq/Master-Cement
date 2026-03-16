@@ -143,7 +143,7 @@ solve_equilibrium <- function(p){
 # ============================================================
 
 calib_2024 <- list(
-  P_target     = 136,1,      # €/tonn
+  P_target     = 136.1,      # €/tonn
   Q_target     = 327.9,    # Mt
   x_row_target = 11.6,   # Mt
   x_no_target  = 1.8     # Mt
@@ -393,7 +393,7 @@ Scenario_2$gamma_cbam <- 0
 # 3. Lagrer resultatene (pris, produksjon, import osv.)
 #
 # Resultatet blir en tabell med én rad per år som kan brukes til
-# grafer eller videre analyse.
+# grafer eller videre analyse. viktigste og det vi fokuserer på blir forskjeld 2025 og 2035 
 
 simulate_path <- function(par_base,
                           scenario_name,
@@ -402,6 +402,7 @@ simulate_path <- function(par_base,
                           beta_start = NULL,
                           beta_end = NULL,
                           alpha_eu_path = NULL,
+                          alpha_no_path = NULL,
                           gamma_cbam_path = NULL){
   
   # Lager vektor med alle år i simuleringen
@@ -452,7 +453,23 @@ simulate_path <- function(par_base,
     
   }
   
+  # --------------------------------------------------------------
+  # 2b) Lag bane for CCS i Norge (alpha_no)
+  # --------------------------------------------------------------
   
+  if (is.null(alpha_no_path)) {
+    
+    alpha_no_vec <- rep(par_base$alpha_no, n)
+    
+  } else {
+    
+    if (length(alpha_no_path) != n) {
+      stop("alpha_no_path må ha samme lengde som antall år.")
+    }
+    
+    alpha_no_vec <- alpha_no_path
+    
+  }
   # --------------------------------------------------------------
   # 3) Lag bane for CBAM (gamma_cbam)
   # --------------------------------------------------------------
@@ -496,6 +513,9 @@ simulate_path <- function(par_base,
     
     # CCS i EU
     p$alpha_eu <- alpha_eu_vec[i]
+    
+    #CCS i norge
+    p$alpha_no <- alpha_no_vec[i]
     
     # CBAM-status
     p$gamma_cbam <- gamma_cbam_vec[i]
@@ -551,11 +571,26 @@ path_BaU <- simulate_path(Scenario_BaU, "BaU", year_start = 2025, year_end = 203
 # Referanse: beta fases ut (beta se litt mer på)
 path_REF2 <- simulate_path(
   Scenario_REF2,
-  "Reference",
+  "Reference 2",
   year_start = 2025,
   year_end = 2035,
   beta_start = 0.4,
   beta_end = 0,
+  alpha_eu_path = rep(0, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035)))
+)
+
+
+path_REF1 <- simulate_path(
+  Scenario_REF1,
+  "Reference 1",
+  year_start = 2025,
+  year_end = 2035,
+  beta_start = 0.4,
+  beta_end   = 0.4,
+  alpha_eu_path = rep(0, length(2025:2035)),
+  alpha_no_path = c(0, rep(0.42, length(2026:2035))), # CCS i Norge fra 2026
   gamma_cbam_path = c(0, rep(1, length(2026:2035)))
 )
 
@@ -614,3 +649,67 @@ path_S2 <- simulate_path(
   # CBAM av i 2025, på fra 2026
   gamma_cbam_path = c(0, rep(1, length(2026:2035)))
 )
+
+
+
+
+
+# ============================================================
+# SAMLE ALLE SCENARIOER I ÉN TABELL for analyse 
+# ------------------------------------------------------------
+# Denne tabellen samler alle simulerte tidsbaner slik at vi
+# enkelt kan hente ut bestemte år til resultatdelen.
+# ============================================================
+
+all_paths <- bind_rows(
+  path_BaU,
+  path_REF1,
+  path_REF2,
+  path_S1,
+  path_S2
+)
+
+
+# TABELL FOR 2025 OG 2035
+# ------------------------------------------------------------
+# Henter ut startår og sluttår for hvert scenario.
+# Dette gir en ryddig sammenligningstabell til drøftingen.
+# ----------------------------------------------------------
+
+results_2025_2035 <- all_paths %>%
+  filter(year %in% c(2025, 2035)) %>%
+  arrange(scenario, year) %>%
+  mutate(
+    P = round(P, 2),
+    Q = round(Q, 2),
+    x_eu = round(x_eu, 2),
+    x_no = round(x_no, 2),
+    x_row = round(x_row, 2)
+  )
+
+print(results_2025_2035)
+
+
+# -------------------------------------------------------------
+# ENDRING FRA 2025 TIL 2035
+# ------------------------------------------------------------
+# Denne tabellen viser hvor mye pris, etterspørsel og tilbud
+# endrer seg mellom startåret og sluttåret i hvert scenario.
+# ------------------------------------------------------------
+
+changes_2025_2035 <- all_paths %>%
+  filter(year %in% c(2025, 2035)) %>%
+  select(scenario, year, P, Q, x_eu, x_no, x_row) %>%
+  tidyr::pivot_wider(
+    names_from = year,
+    values_from = c(P, Q, x_eu, x_no, x_row)
+  ) %>%
+  mutate(
+    dP     = round(P_2035 - P_2025, 2),
+    dQ     = round(Q_2035 - Q_2025, 2),
+    dx_eu  = round(x_eu_2035 - x_eu_2025, 2),
+    dx_no  = round(x_no_2035 - x_no_2025, 2),
+    dx_row = round(x_row_2035 - x_row_2025, 2)
+  )
+
+print(changes_2025_2035)
