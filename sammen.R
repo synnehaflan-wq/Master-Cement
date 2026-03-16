@@ -27,18 +27,18 @@ Base_Parameter <- list(
   
  gamma_cbam = 0,   # 0 = ingen CBAM i basisåret, 1 = CBAM på # vet ikke om dette funker men variabel for å 1 ha CBAM på eller 0 ikke CBAM
   
- ## subsidie på CCS
+ ## subsidie på CCS 
  S_eu = 0.65 * 84,
  S_no = 0.65 * 84,
  
   ## Kostnadsparametere i marginalkostnad: MC_r(x) = C0_r + C1_r*x + (policyledd)
-  C0_eu  = 50,          # C0_eu: basekostnad EU (€/tonn) – konstantledd i MC
+  C0_eu  = 35.55,          # C0_eu: basekostnad EU (€/tonn) – konstantledd i MC
   C1_eu  = 0.5 ,   # C1_eu: helning EU (€/tonn^2) – økende MC når produksjon øker
   
-  C0_no  = 50,          # C0_no: basekostnad Norge (€/tonn)
+  C0_no  = 35.55,          # C0_no: basekostnad Norge (€/tonn)
   C1_no  = 2.5  ,     # C1_no: helning Norge (€/tonn^2)
   
-  C0_row = 50,          # C0_row: basekostnad ROW (€/tonn)
+  C0_row = 35.55,          # C0_row: basekostnad ROW (€/tonn)
   C1_row = 3.0        # C1_row: helning ROW (€/tonn^2)
 )
 
@@ -143,10 +143,10 @@ solve_equilibrium <- function(p){
 # ============================================================
 
 calib_2024 <- list(
-  P_target     = 160,      # €/tonn
-  Q_target     = 327.7,    # Mt
-  x_row_target = 11.369,   # Mt
-  x_no_target  = 1.132     # Mt
+  P_target     = 136,1,      # €/tonn
+  Q_target     = 327.9,    # Mt
+  x_row_target = 11.6,   # Mt
+  x_no_target  = 1.8     # Mt
 )
 
 # EU-leveranse = residual
