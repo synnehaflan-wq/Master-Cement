@@ -588,7 +588,7 @@ path_REF1 <- simulate_path(
   year_start = 2025,
   year_end = 2035,
   beta_start = 0.4,
-  beta_end   = 0.4,
+  beta_end   = 0.0,
   alpha_eu_path = rep(0, length(2025:2035)),
   alpha_no_path = c(0, rep(0.42, length(2026:2035))), # CCS i Norge fra 2026
   gamma_cbam_path = c(0, rep(1, length(2026:2035)))
