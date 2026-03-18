@@ -821,7 +821,7 @@ sens_S1_carbon <- bind_rows(
   sens_S1_carbon_high
 )
 
-sens_S1_carbon_short <- sens_S1_carbon %>%
+sens_S1_carbon_2025_2035 <- sens_S1_carbon %>%
   filter(year %in% c(2025, 2035)) %>%
   select(case, year, P, Q, x_eu, x_no, x_row) %>%
   arrange(case, year) %>%
@@ -829,7 +829,7 @@ sens_S1_carbon_short <- sens_S1_carbon %>%
     across(where(is.numeric), ~ round(.x, 2))
   )
 
-print(sens_S1_carbon_short)
+print(sens_S1_carbon_2025_2035)
 
 
 
