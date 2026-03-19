@@ -812,13 +812,24 @@ sens_S1_carbon_high <- run_sensitivity(
   alpha_eu_path = rep(0, length(2025:2035)),
   alpha_no_path = rep(0.42, length(2025:2035)),
   gamma_cbam_path = c(0, rep(1, length(2026:2035))),
-  P_CO2_new = 100
+  P_CO2_new = 145
 )
-
+sens_S1_carbon_highest <- run_sensitivity(
+  par_scenario = Scenario_1,
+  scenario_name = "Scenario 1",
+  case_name = " Highest carbon price",
+  beta_start = 0,
+  beta_end = 0,
+  alpha_eu_path = rep(0, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035))),
+  P_CO2_new = 200
+)
 sens_S1_carbon <- bind_rows(
   sens_S1_carbon_low,
   sens_S1_carbon_base,
-  sens_S1_carbon_high
+  sens_S1_carbon_high,
+  sens_S1_carbon_highest
 )
 
 sens_S1_carbon_2025_2035 <- sens_S1_carbon %>%
