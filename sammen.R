@@ -32,7 +32,7 @@ Base_Parameter <- list(
  s_no = 0.65 ,
  
  ## parameter for hvor stor andel av eu som har ccs
- rho_eu = 1 ,
+ rho_eu = 0 ,
 
  
   ## Kostnadsparametere i marginalkostnad: MC_r(x) = C0_r + C1_r*x + (policyledd)
@@ -375,6 +375,8 @@ Scenario_2$alpha_eu <- 0
 # Norge har CCS
 Scenario_2$alpha_no <- 0.42
 
+Scenario_2$rho_eu <- 0.3       # ← HER!
+
 # Ingen hjemlig karbonpris i ROW
 Scenario_2$P_home <- 0
 
@@ -644,7 +646,7 @@ path_S2 <- simulate_path(
   beta_end   = 0,
   
   # eksempel på delvis CCS i EU
-  alpha_eu_path = rep(0.15, length(2025:2035)),
+  alpha_eu_path =  c(0, rep(0.5, length(2026:2035))),
   
   # CBAM av i 2025, på fra 2026
   gamma_cbam_path = c(0, rep(1, length(2026:2035)))
