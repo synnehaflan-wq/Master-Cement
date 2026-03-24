@@ -4,7 +4,7 @@ library(dplyr)
 
 Base_Parameter <- list(
   ## Etterspørsel
-  eps = 0.5,            # ε: priselastisitet i etterspørselen (ε > 0)
+  eps = 0.3,            # ε: priselastisitet i etterspørselen (ε > 0)
   A   = 1e6,            # A: skaleringsparameter for etterspørselen (nivå/markedsstørrelse)
   
   ## Karbonpriser
@@ -12,24 +12,28 @@ Base_Parameter <- list(
   P_home = 0,           # P_home: karbonpris i eksportlandet/ROW (€/tCO2)
    
   ## Utslippsintensitet
-  I_eu  = 0.80,         # I_eu: utslippsintensitet EU (tCO2 per tonn sement)
-  I_no  = 0.80,         # I_no: utslippsintensitet Norge (tCO2 per tonn sement)
-  I_row = 0.80,         # I_row: utslippsintensitet ROW (tCO2 per tonn sement)
+  I_eu  = 0.72,         # I_eu: utslippsintensitet EU (tCO2 per tonn sement)
+  I_no  = 0.72,         # I_no: utslippsintensitet Norge (tCO2 per tonn sement)
+  I_row = 0.72,         # I_row: utslippsintensitet ROW (tCO2 per tonn sement)
   
   ## CCS (karbonfangst og -lagring)
   alpha_eu = 0.00,      # α_eu: fangstandel EU (0–1) = andel utslipp fanget med CCS
   alpha_no = 0.0,      # α_no: fangstandel Norge (0–1)
-  C_CCS_eu = 84,        # C_CCS_eu: CCS-kostnad EU (€/tonn sement) – fangst+transport+lagring
-  C_CCS_no = 84,        # C_CCS_no: CCS-kostnad Norge (€/tonn sement)
+  C_CCS_eu = 180,        # C_CCS_eu: CCS-kostnad EU (€/tonn sement) – fangst+transport+lagring
+  C_CCS_no = 180,        # C_CCS_no: CCS-kostnad Norge (€/tonn sement)
   
   ## Gratiskvoter (output-basert tildeling)
-  beta = 0.40,  # β: gratistildeling (tCO2 i gratiskvoter per tonn sement) -> verdi: P_CO2*β (€/tonn)
+  beta = 0.69,  # β: gratistildeling (tCO2 i gratiskvoter per tonn sement) -> verdi: P_CO2*β (€/tonn)
   
  gamma_cbam = 0,   # 0 = ingen CBAM i basisåret, 1 = CBAM på # vet ikke om dette funker men variabel for å 1 ha CBAM på eller 0 ikke CBAM
   
  ## subsidie på CCS 
- S_eu = 0.65 * 84,
- S_no = 0.65 * 84,
+ s_eu = 0.65 ,
+ s_no = 0.65 ,
+ 
+ ## parameter for hvor stor andel av eu som har ccs
+ rho_eu = 1 ,
+
  
   ## Kostnadsparametere i marginalkostnad: MC_r(x) = C0_r + C1_r*x + (policyledd)
   C0_eu  = 35.55,          # C0_eu: basekostnad EU (€/tonn) – konstantledd i MC
@@ -47,22 +51,20 @@ Base_Parameter <- list(
 # Likningene
 
 ## Marginal kostnadsfunksjoner MC_x
-MC_eu <- function(x, p){ #EU sin MC
+MC_eu <- function(x, p){ # EU sin MC
   p$C0_eu +
     p$C1_eu * x +
     p$P_CO2 * p$I_eu * (1 - p$alpha_eu) +
-    p$alpha_eu * p$C_CCS_eu -
-    p$P_CO2 * p$beta -
-    p$S_eu * p$alpha_eu
+    p$alpha_eu * p$rho_eu * (1 - p$s_eu) * p$C_CCS_eu -
+    p$P_CO2 * p$beta
 }
 
-MC_no <- function(x, p){ #Norge sin MC
+MC_no <- function(x, p){ # Norge sin MC
   p$C0_no +
     p$C1_no * x +
     p$P_CO2 * p$I_no * (1 - p$alpha_no) +
-    p$alpha_no * p$C_CCS_no -
-    p$P_CO2 * p$beta -
-    p$S_no * p$alpha_no
+    p$alpha_no * (1 - p$s_no) * p$C_CCS_no -
+    p$P_CO2 * p$beta
 }
 
 MC_row <- function(x, p){  # Resten av verden sin MC
@@ -172,15 +174,13 @@ Base_Parameter$A <- calib_2024$Q_target * (calib_2024$P_target ^ Base_Parameter$
 # ------------------------------------------------------------
 
 policy_eu_2024 <- Base_Parameter$P_CO2 * Base_Parameter$I_eu * (1 - Base_Parameter$alpha_eu) +
-  Base_Parameter$alpha_eu * Base_Parameter$C_CCS_eu -
-  Base_Parameter$P_CO2 * Base_Parameter$beta -
-  Base_Parameter$S_eu * Base_Parameter$alpha_eu
+  Base_Parameter$alpha_eu * Base_Parameter$rho_eu * (1 - Base_Parameter$s_eu) * Base_Parameter$C_CCS_eu -
+  Base_Parameter$P_CO2 * Base_Parameter$beta
 
 
 policy_no_2024 <- Base_Parameter$P_CO2 * Base_Parameter$I_no * (1 - Base_Parameter$alpha_no) +
-  Base_Parameter$alpha_no * Base_Parameter$C_CCS_no -
-  Base_Parameter$P_CO2 * Base_Parameter$beta - 
-  Base_Parameter$S_no * Base_Parameter$alpha_no
+  Base_Parameter$alpha_no * (1 - Base_Parameter$s_no) * Base_Parameter$C_CCS_no -
+  Base_Parameter$P_CO2 * Base_Parameter$beta
 
 policy_row_2024 <- Base_Parameter$P_home * Base_Parameter$I_row +
   Base_Parameter$gamma_cbam * (Base_Parameter$P_CO2 - Base_Parameter$P_home) * Base_Parameter$I_row
@@ -266,7 +266,7 @@ Scenario_BaU$gamma_cbam <- 0
 Scenario_REF1 <- Base_Parameter
 
 Scenario_REF1$P_CO2 <- 65
-Scenario_REF1$beta <- 0.4
+Scenario_REF1$beta <- 0.69
 Scenario_REF1$alpha_eu <- 0
 Scenario_REF1$alpha_no <- 0
 Scenario_REF1$P_home <- 0
@@ -293,7 +293,7 @@ Scenario_REF1$gamma_cbam <- 0
 Scenario_REF2 <- Base_Parameter
 
 Scenario_REF2$P_CO2 <- 65
-Scenario_REF2$beta <- 0.4
+Scenario_REF2$beta <- 0.69
 Scenario_REF2$alpha_eu <- 0
 Scenario_REF2$alpha_no <- 0.42
 Scenario_REF2$P_home <- 0
@@ -366,7 +366,7 @@ Scenario_2 <- Base_Parameter
 Scenario_2$P_CO2 <- 75
 
 # Gratiskvoter settes opp med startverdi og fases ut i simulate_path
-Scenario_2$beta <- 0.4
+Scenario_2$beta <- 0.69
 
 # Startverdi for CCS i EU
 # Denne brukes kun som basis, selve banen legges inn under simulate_path
@@ -574,7 +574,7 @@ path_REF2 <- simulate_path(
   "Reference 2",
   year_start = 2025,
   year_end = 2035,
-  beta_start = 0.4,
+  beta_start = 0.69,
   beta_end = 0,
   alpha_eu_path = rep(0, length(2025:2035)),
   alpha_no_path = rep(0.42, length(2025:2035)),
@@ -587,7 +587,7 @@ path_REF1 <- simulate_path(
   "Reference 1",
   year_start = 2025,
   year_end = 2035,
-  beta_start = 0.4,
+  beta_start = 0.69,
   beta_end   = 0.0,
   alpha_eu_path = rep(0, length(2025:2035)),
   alpha_no_path = c(0, rep(0.42, length(2026:2035))), # CCS i Norge fra 2026
@@ -640,7 +640,7 @@ path_S2 <- simulate_path(
   year_end = 2035,
   
   # gratiskvoter fases ut
-  beta_start = 0.4,
+  beta_start = 0.69,
   beta_end   = 0,
   
   # eksempel på delvis CCS i EU
@@ -773,10 +773,10 @@ run_sensitivity <- function(par_scenario,
 # ============================================================
 # SENSITIVITY ANALYSIS – SCENARIO carbon cost (ETS pris)
 # ------------------------------------------------------------
-# We test how the results in Scenario 1 change when the carbon
+# We test how the results change when the carbon
 # price is varied.
 
-#Scenario 1
+#- Scenario 1
 # ============================================================
 
 sens_S1_carbon_low <- run_sensitivity(
@@ -857,18 +857,18 @@ print(sens_S1_carbon_2025_2035)
 # - Kun CCS-kostnaden endres
 # - Subsidien holdes lik 65 % av CCS-kostnaden
 # ============================================================
-
+# Senario 1
 # --------
 # Lav CCS-kostnad
 # --------
-Scenario_1_lowCCS <- Scenario_1
-Scenario_1_lowCCS$C_CCS_eu <- 60
-Scenario_1_lowCCS$C_CCS_no <- 60
-Scenario_1_lowCCS$S_eu <- 0.65 * Scenario_1_lowCCS$C_CCS_eu
-Scenario_1_lowCCS$S_no <- 0.65 * Scenario_1_lowCCS$C_CCS_no
+Scenario_1_CCS_low <- Scenario_1
+Scenario_1_CCS_low$C_CCS_eu <- 90
+Scenario_1_CCS_low$C_CCS_no <- 90
+Scenario_1_CCS_low$S_eu <- 0.65 * Scenario_1_CCS_low$C_CCS_eu
+Scenario_1_CCS_low$S_no <- 0.65 * Scenario_1_CCS_low$C_CCS_no
 
 path_S1_lowCCS <- simulate_path(
-  Scenario_1_lowCCS,
+  Scenario_1_CCS_low,
   "Scenario 1",
   year_start = 2025,
   year_end = 2035,
@@ -885,14 +885,14 @@ path_S1_lowCCS$case <- "Low CCS cost"
 # --------
 # Basis CCS-kostnad
 # --------
-Scenario_1_baseCCS <- Scenario_1
-Scenario_1_baseCCS$C_CCS_eu <- 84
-Scenario_1_baseCCS$C_CCS_no <- 84
-Scenario_1_baseCCS$S_eu <- 0.65 * Scenario_1_baseCCS$C_CCS_eu
-Scenario_1_baseCCS$S_no <- 0.65 * Scenario_1_baseCCS$C_CCS_no
+Scenario_1_CCS_base <- Scenario_1
+Scenario_1_CCS_base$C_CCS_eu <- 180
+Scenario_1_CCS_base$C_CCS_no <- 180
+Scenario_1_CCS_base$S_eu <- 0.65 * Scenario_1_CCS_base$C_CCS_eu
+Scenario_1_CCS_base$S_no <- 0.65 * Scenario_1_CCS_base$C_CCS_no
 
 path_S1_baseCCS <- simulate_path(
-  Scenario_1_baseCCS,
+  Scenario_1_CCS_base,
   "Scenario 1",
   year_start = 2025,
   year_end = 2035,
@@ -909,14 +909,14 @@ path_S1_baseCCS$case <- "Base CCS cost"
 # --------
 # Høy CCS-kostnad
 # --------
-Scenario_1_highCCS <- Scenario_1
-Scenario_1_highCCS$C_CCS_eu <- 120
-Scenario_1_highCCS$C_CCS_no <- 120
-Scenario_1_highCCS$S_eu <- 0.65 * Scenario_1_highCCS$C_CCS_eu
-Scenario_1_highCCS$S_no <- 0.65 * Scenario_1_highCCS$C_CCS_no
+Scenario_1_CCS_high <- Scenario_1
+Scenario_1_CCS_high$C_CCS_eu <- 240
+Scenario_1_CCS_high$C_CCS_no <- 240
+Scenario_1_CCS_high$S_eu <- 0.65 * Scenario_1_CCS_high$C_CCS_eu
+Scenario_1_CCS_high$S_no <- 0.65 * Scenario_1_CCS_high$C_CCS_no
 
 path_S1_highCCS <- simulate_path(
-  Scenario_1_highCCS,
+  Scenario_1_CCS_high,
   "Scenario 1",
   year_start = 2025,
   year_end = 2035,
@@ -954,7 +954,7 @@ sens_S1_CCS_2025_2035 <- sens_S1_CCS %>%
 print(sens_S1_CCS_2025_2035)
 
 # ============================================================
-# SENSITIVITETSANALYSE – SCENARIO 1
+# SENSITIVITETSANALYSE 
 # ETTERSPØRSELSELASTISITET
 # ------------------------------------------------------------
 # Vi tester hvordan resultatene i Scenario 1 endres når
@@ -964,16 +964,16 @@ print(sens_S1_CCS_2025_2035)
 # Når eps endres, rekalibreres A slik at modellen fortsatt
 # treffer observert etterspørsel i basisåret.
 # ============================================================
-
+#  – SCENARIO 1
 # --------
 # Lav elastisitet
 # --------
-Scenario_1_lowEPS <- Scenario_1
-Scenario_1_lowEPS$eps <- 0.3
-Scenario_1_lowEPS$A <- calib_2024$Q_target * (calib_2024$P_target ^ Scenario_1_lowEPS$eps)
+Scenario_1_EPS_low <- Scenario_1
+Scenario_1_EPS_low$eps <- 0.1
+Scenario_1_EPS_low$A <- calib_2024$Q_target * (calib_2024$P_target ^ Scenario_1_EPS_low$eps)
 
 path_S1_lowEPS <- simulate_path(
-  Scenario_1_lowEPS,
+  Scenario_1_EPS_low,
   "Scenario 1",
   year_start = 2025,
   year_end = 2035,
@@ -990,12 +990,12 @@ path_S1_lowEPS$case <- "Low elasticity"
 # --------
 # Basis elastisitet
 # --------
-Scenario_1_baseEPS <- Scenario_1
-Scenario_1_baseEPS$eps <- 0.5
-Scenario_1_baseEPS$A <- calib_2024$Q_target * (calib_2024$P_target ^ Scenario_1_baseEPS$eps)
+Scenario_1_EPS_base <- Scenario_1
+Scenario_1_EPS_base$eps <- 0.3
+Scenario_1_EPS_base$A <- calib_2024$Q_target * (calib_2024$P_target ^ Scenario_1_EPS_base$eps)
 
 path_S1_baseEPS <- simulate_path(
-  Scenario_1_baseEPS,
+  Scenario_1_EPS_base,
   "Scenario 1",
   year_start = 2025,
   year_end = 2035,
@@ -1012,12 +1012,12 @@ path_S1_baseEPS$case <- "Base elasticity"
 # --------
 # Høy elastisitet
 # --------
-Scenario_1_highEPS <- Scenario_1
-Scenario_1_highEPS$eps <- 0.8
-Scenario_1_highEPS$A <- calib_2024$Q_target * (calib_2024$P_target ^ Scenario_1_highEPS$eps)
+Scenario_1_EPS_high <- Scenario_1
+Scenario_1_EPS_high$eps <- 0.8
+Scenario_1_EPS_high$A <- calib_2024$Q_target * (calib_2024$P_target ^ Scenario_1_EPS_high$eps)
 
 path_S1_highEPS <- simulate_path(
-  Scenario_1_highEPS,
+  Scenario_1_EPS_high,
   "Scenario 1",
   year_start = 2025,
   year_end = 2035,
