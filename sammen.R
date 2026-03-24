@@ -751,8 +751,8 @@ run_sensitivity <- function(par_scenario,
   if (!is.null(C_CCS_no_new)) p$C_CCS_no <- C_CCS_no_new
   
   # Keep subsidy tied to CCS cost if that is your assumption
-  p$S_eu <- 0.65 * p$C_CCS_eu
-  p$S_no <- 0.65 * p$C_CCS_no
+  p$s_eu <- 0.65
+  p$s_no <- 0.65
   
   # Run path
   out <- simulate_path(
@@ -845,7 +845,63 @@ sens_S1_carbon_2025_2035 <- sens_S1_carbon %>%
 print(sens_S1_carbon_2025_2035)
 
 
+# ============================================================
+# SENSITIVITETSANALYSE – SCENARIO 2
+# KARBONPRIS
+# ------------------------------------------------------------
+# Vi tester hvordan resultatene i Scenario 2 endres når
+# karbonprisen varierer mellom lav, base og høy.
+# ============================================================
 
+sens_S2_carbon_low <- run_sensitivity(
+  par_scenario = Scenario_2,
+  scenario_name = "Scenario 2",
+  case_name = "Low carbon price",
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035))),
+  P_CO2_new = 35
+)
+
+sens_S2_carbon_base <- run_sensitivity(
+  par_scenario = Scenario_2,
+  scenario_name = "Scenario 2",
+  case_name = "Base carbon price",
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035))),
+  P_CO2_new = 75
+)
+
+sens_S2_carbon_high <- run_sensitivity(
+  par_scenario = Scenario_2,
+  scenario_name = "Scenario 2",
+  case_name = "High carbon price",
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035))),
+  P_CO2_new = 145
+)
+
+sens_S2_carbon <- bind_rows(
+  sens_S2_carbon_low,
+  sens_S2_carbon_base,
+  sens_S2_carbon_high
+)
+
+sens_S2_carbon_2025_2035 <- sens_S2_carbon %>%
+  filter(year %in% c(2025, 2035)) %>%
+  select(case, year, P, Q, x_eu, x_no, x_row) %>%
+  arrange(case, year) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+
+print(sens_S2_carbon_2025_2035)
 
 
 # ============================================================
@@ -955,6 +1011,83 @@ sens_S1_CCS_2025_2035 <- sens_S1_CCS %>%
 
 print(sens_S1_CCS_2025_2035)
 
+
+# ============================================================
+# SENSITIVITETSANALYSE – SCENARIO 2
+# CCS-KOSTNAD
+# ------------------------------------------------------------
+# Vi tester hvordan resultatene i Scenario 2 endres når
+# CCS-kostnaden varierer mellom lav, base og høy.
+# ============================================================
+
+Scenario_2_CCS_low <- Scenario_2
+Scenario_2_CCS_low$C_CCS_eu <- 90
+Scenario_2_CCS_low$C_CCS_no <- 90
+
+path_S2_lowCCS <- simulate_path(
+  Scenario_2_CCS_low,
+  "Scenario 2",
+  year_start = 2025,
+  year_end = 2035,
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035)))
+)
+path_S2_lowCCS$case <- "Low CCS cost"
+
+
+Scenario_2_CCS_base <- Scenario_2
+Scenario_2_CCS_base$C_CCS_eu <- 180
+Scenario_2_CCS_base$C_CCS_no <- 180
+
+path_S2_baseCCS <- simulate_path(
+  Scenario_2_CCS_base,
+  "Scenario 2",
+  year_start = 2025,
+  year_end = 2035,
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035)))
+)
+path_S2_baseCCS$case <- "Base CCS cost"
+
+
+Scenario_2_CCS_high <- Scenario_2
+Scenario_2_CCS_high$C_CCS_eu <- 240
+Scenario_2_CCS_high$C_CCS_no <- 240
+
+path_S2_highCCS <- simulate_path(
+  Scenario_2_CCS_high,
+  "Scenario 2",
+  year_start = 2025,
+  year_end = 2035,
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035)))
+)
+path_S2_highCCS$case <- "High CCS cost"
+
+
+sens_S2_CCS <- bind_rows(
+  path_S2_lowCCS,
+  path_S2_baseCCS,
+  path_S2_highCCS
+)
+
+sens_S2_CCS_2025_2035 <- sens_S2_CCS %>%
+  filter(year %in% c(2025, 2035)) %>%
+  select(case, year, P, Q, x_eu, x_no, x_row) %>%
+  arrange(case, year) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+
+print(sens_S2_CCS_2025_2035)
+
 # ============================================================
 # SENSITIVITETSANALYSE 
 # ETTERSPØRSELSELASTISITET
@@ -1059,3 +1192,184 @@ sens_S1_EPS_2025_2035 <- sens_S1_EPS %>%
   )
 
 print(sens_S1_EPS_2025_2035)
+
+# ============================================================
+# SENSITIVITETSANALYSE – SCENARIO 2
+# ETTERSPØRSELSELASTISITET
+# ------------------------------------------------------------
+# Vi tester hvordan resultatene i Scenario 2 endres når
+# etterspørselselastisiteten varierer mellom lav, base og høy.
+# ============================================================
+
+Scenario_2_EPS_low <- Scenario_2
+Scenario_2_EPS_low$eps <- 0.1
+Scenario_2_EPS_low$A <- calib_2024$Q_target * (calib_2024$P_target ^ Scenario_2_EPS_low$eps)
+
+path_S2_lowEPS <- simulate_path(
+  Scenario_2_EPS_low,
+  "Scenario 2",
+  year_start = 2025,
+  year_end = 2035,
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035)))
+)
+path_S2_lowEPS$case <- "Low elasticity"
+
+
+Scenario_2_EPS_base <- Scenario_2
+Scenario_2_EPS_base$eps <- 0.3
+Scenario_2_EPS_base$A <- calib_2024$Q_target * (calib_2024$P_target ^ Scenario_2_EPS_base$eps)
+
+path_S2_baseEPS <- simulate_path(
+  Scenario_2_EPS_base,
+  "Scenario 2",
+  year_start = 2025,
+  year_end = 2035,
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035)))
+)
+path_S2_baseEPS$case <- "Base elasticity"
+
+
+Scenario_2_EPS_high <- Scenario_2
+Scenario_2_EPS_high$eps <- 0.8
+Scenario_2_EPS_high$A <- calib_2024$Q_target * (calib_2024$P_target ^ Scenario_2_EPS_high$eps)
+
+path_S2_highEPS <- simulate_path(
+  Scenario_2_EPS_high,
+  "Scenario 2",
+  year_start = 2025,
+  year_end = 2035,
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035)))
+)
+path_S2_highEPS$case <- "High elasticity"
+
+
+sens_S2_EPS <- bind_rows(
+  path_S2_lowEPS,
+  path_S2_baseEPS,
+  path_S2_highEPS
+)
+
+sens_S2_EPS_2025_2035 <- sens_S2_EPS %>%
+  filter(year %in% c(2025, 2035)) %>%
+  select(case, year, P, Q, x_eu, x_no, x_row) %>%
+  arrange(case, year) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+
+print(sens_S2_EPS_2025_2035)
+
+# ============================================================
+# SENSITIVITETSANALYSE – SCENARIO 2
+# ANDEL EU-BEDRIFTER MED CCS (rho_eu)
+# ============================================================
+
+Scenario_2_rho_low <- Scenario_2
+Scenario_2_rho_low$rho_eu <- 0.1
+
+Scenario_2_rho_base <- Scenario_2
+Scenario_2_rho_base$rho_eu <- 0.3
+
+Scenario_2_rho_high <- Scenario_2
+Scenario_2_rho_high$rho_eu <- 0.5
+# ============================================================
+# SENSITIVITETSANALYSE – SCENARIO 2
+# ANDEL EU-BEDRIFTER MED CCS (rho_eu)
+# ------------------------------------------------------------
+# Vi tester hvordan resultatene i Scenario 2 endres når
+# andelen EU-produsenter som investerer i CCS varierer.
+#
+# Tolkning:
+# rho_eu angir andelen av sementbedriftene i EU som har CCS.
+# CCS-kostnaden fordeles på alle EU-produsenter gjennom leddet:
+# alpha_eu * rho_eu * (1 - s_eu) * C_CCS_eu
+# ============================================================
+
+# --------
+# Lav andel CCS i EU
+# --------
+Scenario_2_rho_low <- Scenario_2
+Scenario_2_rho_low$rho_eu <- 0.1
+
+path_S2_lowRHO <- simulate_path(
+  Scenario_2_rho_low,
+  "Scenario 2",
+  year_start = 2025,
+  year_end = 2035,
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035)))
+)
+
+path_S2_lowRHO$case <- "Low rho"
+
+
+# --------
+# Basis andel CCS i EU
+# --------
+Scenario_2_rho_base <- Scenario_2
+Scenario_2_rho_base$rho_eu <- 0.3
+
+path_S2_baseRHO <- simulate_path(
+  Scenario_2_rho_base,
+  "Scenario 2",
+  year_start = 2025,
+  year_end = 2035,
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035)))
+)
+
+path_S2_baseRHO$case <- "Base rho"
+
+
+# --------
+# Høy andel CCS i EU
+# --------
+Scenario_2_rho_high <- Scenario_2
+Scenario_2_rho_high$rho_eu <- 0.5
+
+path_S2_highRHO <- simulate_path(
+  Scenario_2_rho_high,
+  "Scenario 2",
+  year_start = 2025,
+  year_end = 2035,
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035)))
+)
+
+path_S2_highRHO$case <- "High rho"
+
+# ============================================================
+# SAMLE RHO-SENSITIVITETEN I ÉN TABELL
+# ============================================================
+
+sens_S2_RHO <- bind_rows(
+  path_S2_lowRHO,
+  path_S2_baseRHO,
+  path_S2_highRHO
+)
+sens_S2_RHO_2025_2035 <- sens_S2_RHO %>%
+  filter(year %in% c(2025, 2035)) %>%
+  select(case, year, P, Q, x_eu, x_no, x_row) %>%
+  arrange(case, year) %>%
+  mutate(across(where(is.numeric), ~ round(.x, 2)))
+
+print(sens_S2_RHO_2025_2035)
