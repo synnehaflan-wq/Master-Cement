@@ -1,4 +1,7 @@
+library(ggplot2)
+library(tidyr)
 library(dplyr)
+
 
 # Parametere
 
@@ -401,8 +404,8 @@ Scenario_2C$P_CO2 <- 75
 Scenario_2C$beta <- 0.69
 Scenario_2C$alpha_eu <- 0
 Scenario_2C$alpha_no <- 0.42
-Scenario_2C$rho_eu <- 0.30
-Scenario_2C$s_eu <- 0.11
+Scenario_2C$rho_eu <- 0.44
+Scenario_2C$s_eu <- 0.4
 Scenario_2C$P_home <- 0
 Scenario_2C$gamma_cbam <- 0
 
@@ -632,7 +635,7 @@ path_REF2 <- simulate_path(
   beta_start = 0.69,
   beta_end = 0.69,
   alpha_eu_path = rep(0, length(2025:2035)),
-  alpha_no_path = rep(0.42, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),# CCS i Norge fra 2025
   gamma_cbam_path = rep(0, length(2025:2035))
 )
 
@@ -645,7 +648,7 @@ path_REF1 <- simulate_path(
   beta_start = 0.69,
   beta_end   = 0.69,
   alpha_eu_path = rep(0, length(2025:2035)),
-  alpha_no_path = rep(0.42, length(2025:2035)), # CCS i Norge fra 2025
+  alpha_no_path = rep(0., length(2025:2035)), # CCS i Norge fra 2025
   gamma_cbam_path = rep(0, length(2025:2035))
 )
 
@@ -687,7 +690,7 @@ path_S1 <- simulate_path(
 
 path_S2A <- simulate_path(
   Scenario_2A,
-  "Scenario 2A",
+  "2A",
   year_start = 2025,
   year_end = 2035,
   beta_start = 0.69,
@@ -699,7 +702,7 @@ path_S2A <- simulate_path(
 
 path_S2B <- simulate_path(
   Scenario_2B,
-  "Scenario 2B",
+  "2B",
   year_start = 2025,
   year_end = 2035,
   beta_start = 0.69,
@@ -711,7 +714,7 @@ path_S2B <- simulate_path(
 
 path_S2C <- simulate_path(
   Scenario_2C,
-  "Scenario 2C",
+  "2C",
   year_start = 2025,
   year_end = 2035,
   beta_start = 0.69,
@@ -723,7 +726,7 @@ path_S2C <- simulate_path(
 
 path_S2D <- simulate_path(
   Scenario_2D,
-  "Scenario 2D",
+  "2D",
   year_start = 2025,
   year_end = 2035,
   beta_start = 0.69,
@@ -735,7 +738,7 @@ path_S2D <- simulate_path(
 
 path_S2E <- simulate_path(
   Scenario_2E,
-  "Scenario 2E",
+  "2E",
   year_start = 2025,
   year_end = 2035,
   beta_start = 0.69,
@@ -747,7 +750,7 @@ path_S2E <- simulate_path(
 
 path_S2F <- simulate_path(
   Scenario_2F,
-  "Scenario 2F",
+  "2F",
   year_start = 2025,
   year_end = 2035,
   beta_start = 0.69,
@@ -831,12 +834,133 @@ print(changes_2025_2035)
 scenario2_config <- data.frame(
   scenario = c("Scenario 2A", "Scenario 2B", "Scenario 2C",
                "Scenario 2D", "Scenario 2E", "Scenario 2F"),
-  rho_eu = c(0.10, 0.20, 0.30, 0.40, 0.50, 0.70),
-  s_eu   = c(0.30, 0.50, 0.65, 0.65, 0.80, 0.90)
+  rho_eu = c(0.26, 0.44, 0.44, 0.78, 0.26, 0.80),
+  s_eu   = c(0.11, 0.05, 0.4, 0.65, 0.05, 0.80)
 )
 
 print(scenario2_config)
 
+
+
+
+# ============================================================
+# GRAFDATA – SCENARIO 2A–2D SAMMENLIGNET MED REFERENCE 1
+# ------------------------------------------------------------
+# Vi bruker 2035-tallene og beregner prosentvis endring i
+# pris (P) og etterspørsel (Q) relativt til Reference 1.
+# ============================================================
+
+plotdata_S2_vs_REF1 <- bind_rows(
+  path_REF1,
+  path_S2A,
+  path_S2B,
+  path_S2C,
+  path_S2D
+) %>%
+  filter(year == 2035) %>%
+  select(scenario, P, Q) %>%
+  pivot_longer(
+    cols = c(P, Q),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  group_by(variable) %>%
+  mutate(
+    ref_value = value[scenario == "Reference 1"],
+    pct_change = 100 * (value - ref_value) / ref_value
+  ) %>%
+  ungroup() %>%
+  filter(scenario != "Reference 1") %>%
+  mutate(
+    variable = recode(variable,
+                      P = "Pris",
+                      Q = "Etterspørsel"
+    )
+  )
+
+print(plotdata_S2_vs_REF1)
+
+#graf___________________________-
+
+ggplot(plotdata_S2_vs_REF1, aes(x = scenario, y = pct_change, fill = variable)) +
+  geom_col(
+    position = position_dodge(width = 0.6),
+    width = 0.5
+  ) +
+  geom_text(
+    aes(
+      label = paste0(round(pct_change, 1), "%"),
+      y = ifelse(pct_change >= 0, pct_change + 1, pct_change - 1)
+    ),
+    position = position_dodge(width = 0.6),
+    size = 4
+  ) +
+  geom_hline(yintercept = 0, linewidth = 0.5) +
+  geom_text(
+    data = distinct(plotdata_S2_vs_REF1, scenario),
+    aes(x = scenario, y = 0, label = scenario),
+    inherit.aes = FALSE,
+    vjust = -0.8,
+    size = 4
+  ) +
+  labs(
+    title = "Scenario 2A–2D: endring i pris og etterspørsel i 2035 relativt til Reference 1",
+    x = NULL,
+    y = "Prosentvis endring fra Reference 1 (%)",
+    fill = NULL
+  ) +
+  scale_y_continuous(
+    breaks = seq(-15, 45, by = 5)
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.y = element_text(size = 14),
+    plot.title = element_text(size = 14, face = "bold"),
+    legend.position = "right"
+  )
+# ============================================================
+# GRAFDATA – ABSOLUTT ENDRING MOT REFERENCE 1
+# ============================================================
+
+plotdata_S2_vs_REF1_abs <- bind_rows(
+  path_REF1,
+  path_S2A,
+  path_S2B,
+  path_S2C,
+  path_S2D
+) %>%
+  filter(year == 2035) %>%
+  select(scenario, P, Q) %>%
+  pivot_longer(
+    cols = c(P, Q),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  group_by(variable) %>%
+  mutate(
+    ref_value = value[scenario == "Reference 1"],
+    abs_change = value - ref_value
+  ) %>%
+  ungroup() %>%
+  filter(scenario != "Reference 1") %>%
+  mutate(
+    variable = recode(variable,
+                      P = "Pris",
+                      Q = "Etterspørsel"
+    )
+  )
+
+ggplot(plotdata_S2_vs_REF1_abs, aes(x = scenario, y = abs_change, fill = variable)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Scenario 2A–2D: absolutt endring i pris og etterspørsel i 2035 relativt til Reference 1",
+    x = NULL,
+    y = "Absolutt endring fra Reference 1",
+    fill = NULL
+  ) +
+  theme_minimal()
 # ============================================================
 # RUN_SENSITIVITY()
 # ------------------------------------------------------------
@@ -889,6 +1013,12 @@ run_sensitivity <- function(par_scenario,
   out$case <- case_name
   out
 }
+
+
+
+
+
+
 
 
 # ============================================================
