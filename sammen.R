@@ -1518,3 +1518,314 @@ sens_S2_EPS_2025_2035 <- sens_S2_EPS %>%
 
 print(sens_S2_EPS_2025_2035)
 
+
+
+
+# ============================================================
+# PLOTDATA – SENSITIVITET KARBONPRIS
+# ------------------------------------------------------------
+# Lager prosentvis endring i P og Q relativt til base case
+# for Scenario 1 og Scenario 2 i 2035.
+# ============================================================
+
+plot_carbon_sens <- bind_rows(
+  sens_S1_carbon %>% mutate(model_scenario = "Scenario 1"),
+  sens_S2_carbon %>% mutate(model_scenario = "Scenario 2")
+) %>%
+  filter(year == 2035) %>%
+  filter(case %in% c("Low carbon price", "Base carbon price", "High carbon price")) %>%
+  select(model_scenario, case, P, Q) %>%
+  pivot_longer(
+    cols = c(P, Q),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  group_by(model_scenario, variable) %>%
+  mutate(
+    base_value = value[case == "Base carbon price"],
+    pct_change = 100 * (value - base_value) / base_value
+  ) %>%
+  ungroup() %>%
+  filter(case != "Base carbon price") %>%
+  mutate(
+    sensitivity_side = case_when(
+      case == "High carbon price" ~ "High",
+      case == "Low carbon price" ~ "Low"
+    ),
+    variable = recode(variable,
+                      P = "Pris",
+                      Q = "Etterspørsel"
+    ),
+    x_group = paste(sensitivity_side, model_scenario, sep = " - ")
+  )
+
+print(plot_carbon_sens)
+ggplot(plot_carbon_sens, aes(x = x_group, y = pct_change, fill = variable)) +
+  geom_col(
+    position = position_dodge(width = 0.65),
+    width = 0.5
+  ) +
+  geom_text(
+    aes(
+      label = paste0(round(pct_change, 1), "%"),
+      y = ifelse(pct_change >= 0, pct_change + 1, pct_change - 1)
+    ),
+    position = position_dodge(width = 0.65),
+    size = 4
+  ) +
+  geom_hline(yintercept = 0, linewidth = 0.5) +
+  geom_vline(xintercept = 2.5, linetype = "dashed", color = "grey50") +
+  annotate("text", x = 1.5, y = max(plot_carbon_sens$pct_change) + 5, label = "High", size = 5, fontface = "bold") +
+  annotate("text", x = 3.5, y = max(plot_carbon_sens$pct_change) + 5, label = "Low", size = 5, fontface = "bold") +
+  scale_x_discrete(labels = c(
+    "High - Scenario 1" = "S1",
+    "High - Scenario 2" = "S2",
+    "Low - Scenario 1"  = "S1",
+    "Low - Scenario 2"  = "S2"
+  )) +
+  labs(
+    title = "Sensitivitetsanalyse: karbonpris",
+    x = NULL,
+    y = "Prosentvis endring fra basis (%)",
+    fill = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 12, face = "bold"),
+    plot.title = element_text(face = "bold"),
+    legend.position = "right"
+  )
+
+
+
+# ============================================================
+# PLOTDATA – PRODUKSJON (x_eu, x_no, x_row)
+# Karbonpris sensitivitet
+# ============================================================
+
+plot_prod_sens <- bind_rows(
+  sens_S1_carbon %>% mutate(model_scenario = "Scenario 1"),
+  sens_S2_carbon %>% mutate(model_scenario = "Scenario 2")
+) %>%
+  filter(year == 2035) %>%
+  filter(case %in% c("Low carbon price", "Base carbon price", "High carbon price")) %>%
+  select(model_scenario, case, x_eu, x_no, x_row) %>%
+  pivot_longer(
+    cols = c(x_eu, x_no, x_row),
+    names_to = "region",
+    values_to = "value"
+  ) %>%
+  group_by(model_scenario, region) %>%
+  mutate(
+    base_value = value[case == "Base carbon price"],
+    pct_change = 100 * (value - base_value) / base_value
+  ) %>%
+  ungroup() %>%
+  filter(case != "Base carbon price") %>%
+  mutate(
+    sensitivity_side = case_when(
+      case == "High carbon price" ~ "High",
+      case == "Low carbon price" ~ "Low"
+    ),
+    region = recode(region,
+                    x_eu = "EU",
+                    x_no = "Norge",
+                    x_row = "ROW"
+    ),
+    x_group = paste(sensitivity_side, model_scenario, sep = " - ")
+  )
+
+print(plot_prod_sens)
+
+
+ggplot(plot_prod_sens, aes(x = x_group, y = pct_change, fill = region)) +
+  geom_col(
+    position = position_dodge(width = 0.7),
+    width = 0.55
+  ) +
+  geom_text(
+    aes(
+      label = paste0(round(pct_change, 1), "%"),
+      y = ifelse(pct_change >= 0, pct_change + 1, pct_change - 1)
+    ),
+    position = position_dodge(width = 0.7),
+    size = 4
+  ) +
+  geom_hline(yintercept = 0, linewidth = 0.5) +
+  geom_vline(xintercept = 2.5, linetype = "dashed", color = "grey50") +
+  annotate("text", x = 1.5, y = max(plot_prod_sens$pct_change) + 5, label = "High", size = 5, fontface = "bold") +
+  annotate("text", x = 3.5, y = max(plot_prod_sens$pct_change) + 5, label = "Low", size = 5, fontface = "bold") +
+  scale_x_discrete(labels = c(
+    "High - Scenario 1" = "S1",
+    "High - Scenario 2" = "S2",
+    "Low - Scenario 1"  = "S1",
+    "Low - Scenario 2"  = "S2"
+  )) +
+  labs(
+    title = "Sensitivitetsanalyse: karbonpris",
+    subtitle = "Prosentvis endring i produksjon fra basis (2035)",
+    x = NULL,
+    y = "Prosentvis endring (%)",
+    fill = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 12, face = "bold"),
+    plot.title = element_text(face = "bold")
+  )
+
+
+
+
+# ============================================================
+# PLOTDATA – PRODUKSJON (x_eu, x_no, x_row)
+# CCS-kostnad sensitivitet
+# ============================================================
+
+plot_prod_ccs <- bind_rows(
+  sens_S1_CCS %>% mutate(model_scenario = "Scenario 1"),
+  sens_S2_CCS %>% mutate(model_scenario = "Scenario 2")
+) %>%
+  filter(year == 2035) %>%
+  filter(case %in% c("Low CCS cost", "Base CCS cost", "High CCS cost")) %>%
+  select(model_scenario, case, x_eu, x_no, x_row) %>%
+  pivot_longer(
+    cols = c(x_eu, x_no, x_row),
+    names_to = "region",
+    values_to = "value"
+  ) %>%
+  group_by(model_scenario, region) %>%
+  mutate(
+    base_value = value[case == "Base CCS cost"],
+    pct_change = 100 * (value - base_value) / base_value
+  ) %>%
+  ungroup() %>%
+  filter(case != "Base CCS cost") %>%
+  mutate(
+    sensitivity_side = case_when(
+      case == "High CCS cost" ~ "High",
+      case == "Low CCS cost" ~ "Low"
+    ),
+    region = recode(region,
+                    x_eu = "EU",
+                    x_no = "Norge",
+                    x_row = "ROW"
+    ),
+    x_group = paste(sensitivity_side, model_scenario, sep = " - ")
+  )
+
+print(plot_prod_ccs)
+
+
+ggplot(plot_prod_ccs, aes(x = x_group, y = pct_change, fill = region)) +
+  geom_col(
+    position = position_dodge(width = 0.7),
+    width = 0.55
+  ) +
+  geom_text(
+    aes(
+      label = paste0(round(pct_change, 1), "%"),
+      y = ifelse(pct_change >= 0, pct_change + 1, pct_change - 1)
+    ),
+    position = position_dodge(width = 0.7),
+    size = 4
+  ) +
+  geom_hline(yintercept = 0, linewidth = 0.5) +
+  geom_vline(xintercept = 2.5, linetype = "dashed", color = "grey50") +
+  annotate("text", x = 1.5, y = max(plot_prod_ccs$pct_change) + 5, label = "High", size = 5, fontface = "bold") +
+  annotate("text", x = 3.5, y = max(plot_prod_ccs$pct_change) + 5, label = "Low", size = 5, fontface = "bold") +
+  scale_x_discrete(labels = c(
+    "High - Scenario 1" = "S1",
+    "High - Scenario 2" = "S2",
+    "Low - Scenario 1"  = "S1",
+    "Low - Scenario 2"  = "S2"
+  )) +
+  labs(
+    title = "Sensitivitetsanalyse: CCS-kostnad",
+    subtitle = "Prosentvis endring i produksjon fra basis (2035)",
+    x = NULL,
+    y = "Prosentvis endring (%)",
+    fill = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 12, face = "bold"),
+    plot.title = element_text(face = "bold")
+  )
+
+
+# ============================================================
+# PLOTDATA – PRODUKSJON (x_eu, x_no, x_row)
+# Elastisitets-sensitivitet
+# ============================================================
+
+plot_prod_eps <- bind_rows(
+  sens_S1_EPS %>% mutate(model_scenario = "Scenario 1"),
+  sens_S2_EPS %>% mutate(model_scenario = "Scenario 2")
+) %>%
+  filter(year == 2035) %>%
+  filter(case %in% c("Low elasticity", "Base elasticity", "High elasticity")) %>%
+  select(model_scenario, case, x_eu, x_no, x_row) %>%
+  pivot_longer(
+    cols = c(x_eu, x_no, x_row),
+    names_to = "region",
+    values_to = "value"
+  ) %>%
+  group_by(model_scenario, region) %>%
+  mutate(
+    base_value = value[case == "Base elasticity"],
+    pct_change = 100 * (value - base_value) / base_value
+  ) %>%
+  ungroup() %>%
+  filter(case != "Base elasticity") %>%
+  mutate(
+    sensitivity_side = case_when(
+      case == "High elasticity" ~ "High",
+      case == "Low elasticity" ~ "Low"
+    ),
+    region = recode(region,
+                    x_eu = "EU",
+                    x_no = "Norge",
+                    x_row = "ROW"
+    ),
+    x_group = paste(sensitivity_side, model_scenario, sep = " - ")
+  )
+
+print(plot_prod_eps)
+
+
+ggplot(plot_prod_eps, aes(x = x_group, y = pct_change, fill = region)) +
+  geom_col(
+    position = position_dodge(width = 0.7),
+    width = 0.55
+  ) +
+  geom_text(
+    aes(
+      label = paste0(round(pct_change, 1), "%"),
+      y = ifelse(pct_change >= 0, pct_change + 1, pct_change - 1)
+    ),
+    position = position_dodge(width = 0.7),
+    size = 4
+  ) +
+  geom_hline(yintercept = 0, linewidth = 0.5) +
+  geom_vline(xintercept = 2.5, linetype = "dashed", color = "grey50") +
+  annotate("text", x = 1.5, y = max(plot_prod_eps$pct_change) + 5, label = "High", size = 5, fontface = "bold") +
+  annotate("text", x = 3.5, y = max(plot_prod_eps$pct_change) + 5, label = "Low", size = 5, fontface = "bold") +
+  scale_x_discrete(labels = c(
+    "High - Scenario 1" = "S1",
+    "High - Scenario 2" = "S2",
+    "Low - Scenario 1"  = "S1",
+    "Low - Scenario 2"  = "S2"
+  )) +
+  labs(
+    title = "Sensitivitetsanalyse: etterspørselselastisitet",
+    subtitle = "Prosentvis endring i produksjon fra basis (2035)",
+    x = NULL,
+    y = "Prosentvis endring (%)",
+    fill = NULL
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(size = 12, face = "bold"),
+    plot.title = element_text(face = "bold")
+  )
