@@ -1521,6 +1521,109 @@ print(sens_S2_EPS_2025_2035)
 
 
 
+
+
+
+
+
+# ============================================================
+# LANGSIKTIG SCENARIO 2035
+# ------------------------------------------------------------
+# Dette scenarioet illustrerer en mulig markedssituasjon i 2035
+# der flere sentrale parametere endres samtidig.
+#
+# Antakelser:
+# - høy EU ETS-pris
+# - lavere CCS-kostnad
+# - høy andel EU-produsenter med CCS
+# - moderat subsidieandel
+# - ingen gratiskvoter
+# - CBAM er aktiv
+# ============================================================
+
+Scenario_2035_longrun <- Base_Parameter
+
+# Karbonpris
+Scenario_2035_longrun$P_CO2 <- 200
+
+# Gratiskvoter fases helt ut
+Scenario_2035_longrun$beta <- 0
+
+# CBAM aktiv
+Scenario_2035_longrun$gamma_cbam <- 1
+Scenario_2035_longrun$P_home <- 0
+
+# CCS-kostnader faller over tid
+Scenario_2035_longrun$C_CCS_eu <- 90
+Scenario_2035_longrun$C_CCS_no <- 90
+
+# Subsidieandel
+Scenario_2035_longrun$s_eu <- 0.11
+Scenario_2035_longrun$s_no <- 0.11
+
+# Andel EU-produsenter med CCS
+Scenario_2035_longrun$rho_eu <- 0.78
+
+# Fangstgrader
+Scenario_2035_longrun$alpha_eu <- 0.50
+Scenario_2035_longrun$alpha_no <- 0.42
+
+
+# ============================================================
+# LANGSIKTIG SCENARIO 2035
+# ------------------------------------------------------------
+# Dette scenarioet illustrerer en mulig markedssituasjon i 2035
+# der flere sentrale parametere endres samtidig.
+#
+# Antakelser:
+# - høy EU ETS-pris
+# - lavere CCS-kostnad
+# - høy andel EU-produsenter med CCS
+# - moderat subsidieandel
+# - ingen gratiskvoter
+# - CBAM er aktiv
+# ============================================================
+
+Scenario_2035_longrun <- Base_Parameter
+
+# Karbonpris
+Scenario_2035_longrun$P_CO2 <- 200
+
+# Gratiskvoter fases helt ut
+Scenario_2035_longrun$beta <- 0
+
+# CBAM aktiv
+Scenario_2035_longrun$gamma_cbam <- 1
+Scenario_2035_longrun$P_home <- 0
+
+# CCS-kostnader faller over tid
+Scenario_2035_longrun$C_CCS_eu <- 90
+Scenario_2035_longrun$C_CCS_no <- 90
+
+# Subsidieandel
+Scenario_2035_longrun$s_eu <- 0.11
+Scenario_2035_longrun$s_no <- 0.11
+
+# Andel EU-produsenter med CCS
+Scenario_2035_longrun$rho_eu <- 0.78
+
+# Fangstgrader
+Scenario_2035_longrun$alpha_eu <- 0.50
+Scenario_2035_longrun$alpha_no <- 0.42
+
+# ============================================================
+# LØS LANGSIKTIG LIKEVEKT I 2035
+# ============================================================
+
+eq_2035_longrun <- solve_equilibrium(Scenario_2035_longrun)
+
+cat("\n===== LANGSIKTIG SCENARIO 2035 =====\n")
+cat("P:", round(eq_2035_longrun$P, 4), "\n")
+cat("Q:", round(eq_2035_longrun$Q, 4), "\n")
+cat("x_eu:", round(eq_2035_longrun$x_eu, 4), "\n")
+cat("x_no:", round(eq_2035_longrun$x_no, 4), "\n")
+cat("x_row:", round(eq_2035_longrun$x_row, 4), "\n")
+cat("===================================\n\n")
 # ============================================================
 # PLOTDATA – SENSITIVITET KARBONPRIS
 # ------------------------------------------------------------
