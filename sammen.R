@@ -1932,3 +1932,78 @@ ggplot(plot_prod_eps, aes(x = x_group, y = pct_change, fill = region)) +
     axis.text.x = element_text(size = 12, face = "bold"),
     plot.title = element_text(face = "bold")
   )
+
+
+
+# ============================================================
+# DATA – LANGSIKTIG SCENARIO 2035 VS REFERENCE 1
+# ------------------------------------------------------------
+# Lager prosentvis endring i:
+# P, Q, x_eu, x_no og x_row
+# relativt til Reference 1 i 2035
+# ============================================================
+
+ref1_2035 <- path_REF1 %>%
+  filter(year == 2035)
+
+plot_longrun_simple <- data.frame(
+  variable = c("P", "Q", "EU", "Norge", "ROW"),
+  value_ref = c(
+    ref1_2035$P,
+    ref1_2035$Q,
+    ref1_2035$x_eu,
+    ref1_2035$x_no,
+    ref1_2035$x_row
+  ),
+  value_longrun = c(
+    eq_2035_longrun$P,
+    eq_2035_longrun$Q,
+    eq_2035_longrun$x_eu,
+    eq_2035_longrun$x_no,
+    eq_2035_longrun$x_row
+  )
+) %>%
+  mutate(
+    pct_change = 100 * (value_longrun - value_ref) / value_ref,
+    variable = factor(variable, levels = c("P", "Q", "EU", "Norge", "ROW"))
+  )
+
+print(plot_longrun_simple)
+
+library(ggplot2)
+
+ggplot(plot_longrun_simple, aes(x = variable, y = pct_change, fill = variable)) +
+  geom_col(width = 0.6) +
+  geom_text(
+    aes(
+      label = paste0(round(pct_change, 1), "%"),
+      y = ifelse(pct_change >= 0, pct_change + 3, pct_change - 3)
+    ),
+    size = 5
+  ) +
+  geom_hline(yintercept = 0, linewidth = 0.7, colour = "black") +
+  geom_vline(xintercept = 2.5, linetype = "dashed", colour = "grey50") +
+  annotate("text", x = 1.5, y = 85, label = "Marked", size = 6, fontface = "bold") +
+  annotate("text", x = 4.0, y = 85, label = "Produksjon", size = 6, fontface = "bold") +
+  scale_fill_manual(values = c(
+    "P" = "grey40",
+    "Q" = "grey70",
+    "EU" = "#F0746A",
+    "Norge" = "#00BA38",
+    "ROW" = "#5B8DE8"
+  )) +
+  labs(
+    title = "Markedsmulighet scenario 2035",
+    subtitle = "Prosentvis endring fra Reference 1",
+    x = NULL,
+    y = "Prosentvis endring (%)"
+  ) +
+  coord_cartesian(ylim = c(-60, 85)) +
+  theme_minimal(base_size = 16) +
+  theme(
+    legend.position = "none",
+    axis.text.x = element_text(size = 16, face = "bold"),
+    axis.title.y = element_text(size = 16),
+    plot.title = element_text(size = 20, face = "bold"),
+    plot.subtitle = element_text(size = 14)
+  )
