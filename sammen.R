@@ -921,6 +921,81 @@ ggplot(plotdata_S2_vs_REF1, aes(x = scenario, y = pct_change, fill = variable)) 
     legend.position = "right"
   )
 # ============================================================
+# GRAFDATA – SCENARIO 2A–2D SAMMENLIGNET MED SCENARIO 1
+# ------------------------------------------------------------
+# Vi bruker 2035-tallene og beregner prosentvis endring i
+# pris (P) og etterspørsel (Q) relativt til Scenario 1.
+# ============================================================
+
+plotdata_S2_vs_S1 <- bind_rows(
+  path_S1,
+  path_S2A,
+  path_S2B,
+  path_S2C,
+  path_S2D
+) %>%
+  filter(year == 2035) %>%
+  select(scenario, P, Q) %>%
+  pivot_longer(
+    cols = c(P, Q),
+    names_to = "variable",
+    values_to = "value"
+  ) %>%
+  group_by(variable) %>%
+  mutate(
+    ref_value = value[scenario == "CBAM senario"],
+    pct_change = 100 * (value - ref_value) / ref_value
+  ) %>%
+  ungroup() %>%
+  filter(scenario != "CBAM senario") %>%
+  mutate(
+    variable = recode(variable,
+                      P = "Pris",
+                      Q = "Etterspørsel"
+    )
+  )
+
+print(plotdata_S2_vs_S1)
+#graf 
+ggplot(plotdata_S2_vs_S1, aes(x = scenario, y = pct_change, fill = variable)) +
+  geom_col(
+    position = position_dodge(width = 0.6),
+    width = 0.5
+  ) +
+  geom_text(
+    aes(
+      label = paste0(round(pct_change, 1), "%"),
+      y = ifelse(pct_change >= 0, pct_change + 1, pct_change - 1)
+    ),
+    position = position_dodge(width = 0.6),
+    size = 4
+  ) +
+  geom_hline(yintercept = 0, linewidth = 0.5) +
+  geom_text(
+    data = distinct(plotdata_S2_vs_S1, scenario),
+    aes(x = scenario, y = 0, label = scenario),
+    inherit.aes = FALSE,
+    vjust = -0.8,
+    size = 4
+  ) +
+  labs(
+    title = "Scenario 2A–2D: endring i pris og etterspørsel i 2035 relativt til Scenario 1",
+    x = NULL,
+    y = "Prosentvis endring fra Scenario 1 (%)",
+    fill = NULL
+  ) +
+  scale_y_continuous(
+    breaks = seq(-15, 45, by = 5)
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.y = element_text(size = 14),
+    plot.title = element_text(size = 14, face = "bold"),
+    legend.position = "right"
+  )
+# ============================================================
 # GRAFDATA – ABSOLUTT ENDRING MOT REFERENCE 1
 # ============================================================
 
