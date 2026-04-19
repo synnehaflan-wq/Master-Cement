@@ -840,9 +840,122 @@ scenario2_config <- data.frame(
 
 print(scenario2_config)
 
+# ============================================================
+# FUNKSJON – BEREGN UTSLIPP UTENFOR MODELLEN
+# ------------------------------------------------------------
+# Beregner utslipp i EU, Norge, ROW og totalt
+# basert på ferdige scenarioresultater og scenario-spesifikke
+# verdier for rho_eu og alpha_no.
+# ============================================================
 
+make_emissions_table_external <- function(df, scenario_label,
+                                          I_eu, I_no, I_row,
+                                          rho_eu_value,
+                                          alpha_no_value,
+                                          year_selected = 2035) {
+  
+  df %>%
+    filter(year == year_selected) %>%
+    mutate(
+      eu_utslipp = x_eu * I_eu * (1 - alpha_eu * rho_eu_value),
+      no_utslipp = x_no * I_no * (1 - alpha_no_value),
+      row_utslipp = x_row * I_row,
+      totale_utslipp = eu_utslipp + no_utslipp + row_utslipp
+    ) %>%
+    transmute(
+      scenario = scenario_label,
+      year = year,
+      eu_utslipp = eu_utslipp,
+      no_utslipp = no_utslipp,
+      row_utslipp = row_utslipp,
+      totale_utslipp = totale_utslipp
+    )
+}
+# ============================================================
+# TABELL – UTSLIPP I DE ULIKE SCENARIOENE
+# ============================================================
 
+utslippstabell <- bind_rows(
+  make_emissions_table_external(
+    path_REF1, "Reference 1",
+    I_eu = Base_Parameter$I_eu,
+    I_no = Base_Parameter$I_no,
+    I_row = Base_Parameter$I_row,
+    rho_eu_value = 0,
+    alpha_no_value = 0
+  ),
+  
+  make_emissions_table_external(
+    path_S1, "Scenario 1",
+    I_eu = Base_Parameter$I_eu,
+    I_no = Base_Parameter$I_no,
+    I_row = Base_Parameter$I_row,
+    rho_eu_value = 0,
+    alpha_no_value = 0.42
+  ),
+  
+  make_emissions_table_external(
+    path_S2A, "Scenario 2A",
+    I_eu = Base_Parameter$I_eu,
+    I_no = Base_Parameter$I_no,
+    I_row = Base_Parameter$I_row,
+    rho_eu_value = 0.26,
+    alpha_no_value = 0.42
+  ),
+  
+  make_emissions_table_external(
+    path_S2B, "Scenario 2B",
+    I_eu = Base_Parameter$I_eu,
+    I_no = Base_Parameter$I_no,
+    I_row = Base_Parameter$I_row,
+    rho_eu_value = 0.44,
+    alpha_no_value = 0.42
+  ),
+  
+  make_emissions_table_external(
+    path_S2C, "Scenario 2C",
+    I_eu = Base_Parameter$I_eu,
+    I_no = Base_Parameter$I_no,
+    I_row = Base_Parameter$I_row,
+    rho_eu_value = 0.44,
+    alpha_no_value = 0.42
+  ),
+  
+  make_emissions_table_external(
+    path_S2D, "Scenario 2D",
+    I_eu = Base_Parameter$I_eu,
+    I_no = Base_Parameter$I_no,
+    I_row = Base_Parameter$I_row,
+    rho_eu_value = 0.78,
+    alpha_no_value = 0.42
+  ),
+  
+  make_emissions_table_external(
+    path_S2E, "Scenario 2E",
+    I_eu = Base_Parameter$I_eu,
+    I_no = Base_Parameter$I_no,
+    I_row = Base_Parameter$I_row,
+    rho_eu_value = 0.26,
+    alpha_no_value = 0.42
+  ),
+  
+  make_emissions_table_external(
+    path_S2F, "Scenario 2F",
+    I_eu = Base_Parameter$I_eu,
+    I_no = Base_Parameter$I_no,
+    I_row = Base_Parameter$I_row,
+    rho_eu_value = 0.80,
+    alpha_no_value = 0.42
+  )
+) %>%
+  mutate(
+    eu_utslipp = round(eu_utslipp, 2),
+    no_utslipp = round(no_utslipp, 2),
+    row_utslipp = round(row_utslipp, 2),
+    totale_utslipp = round(totale_utslipp, 2)
+  )
 
+print(utslippstabell)
 # ============================================================
 # GRAFDATA – SCENARIO 2A–2D SAMMENLIGNET MED REFERENCE 1
 # ------------------------------------------------------------
@@ -1036,6 +1149,100 @@ ggplot(plotdata_S2_vs_REF1_abs, aes(x = scenario, y = abs_change, fill = variabl
     fill = NULL
   ) +
   theme_minimal()
+
+
+
+
+# ============================================================
+# DATA – MARKEDSANDELER I 2035 FOR SCENARIO 1 OG 2A–2D
+# ============================================================
+
+plot_marketshare_facets <- bind_rows(
+  path_S1,
+  path_S2A,
+  path_S2B,
+  path_S2C,
+  path_S2D
+) %>%
+  filter(year == 2035) %>%
+  select(scenario, x_eu, x_no, x_row) %>%
+  pivot_longer(
+    cols = c(x_eu, x_no, x_row),
+    names_to = "producer",
+    values_to = "value"
+  ) %>%
+  mutate(
+    producer = recode(producer,
+                      x_eu = "EU",
+                      x_no = "Norge",
+                      x_row = "ROW"
+    ),
+    scenario = recode(scenario,
+                      "CBAM senario" = "CBAM 1",
+                      "Scenario 2A" = "+CCS 2A",
+                      "Scenario 2B" = "+CCS 2B",
+                      "Scenario 2C" = "+CCS 2C",
+                      "Scenario 2D" = "+CCS 2D"
+    ),
+    scenario = factor(scenario, levels = c("Scenario 1", "2A", "2B", "2C", "2D"))
+  ) %>%
+  group_by(scenario) %>%
+  mutate(
+    share = 100 * value / sum(value),
+    label = paste0(round(share, 1), "%"),
+    ypos = cumsum(share) - 0.5 * share
+  ) %>%
+  ungroup()
+
+# Egen label-posisjon litt utenfor kaka
+label_data <- plot_marketshare_facets %>%
+  mutate(
+    x_lab = 2.35,
+    # små justeringer for å unngå overlapp mellom Norge og ROW
+    ypos_lab = case_when(
+      producer == "Norge" ~ ypos - 6,
+      producer == "ROW"   ~ ypos + 6,
+      TRUE ~ ypos
+    )
+  )
+
+# ============================================================
+# FIGUR – KAKEDIAGRAMMER VED SIDEN AV HVERANDRE
+# ============================================================
+
+ggplot(plot_marketshare_facets, aes(x = 2, y = share, fill = producer)) +
+  geom_col(width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  xlim(0.5, 2.8) +
+  facet_wrap(~ scenario, nrow = 1) +
+  
+  # prosentlabeler litt utenfor
+  geom_text(
+    data = label_data,
+    aes(x = x_lab, y = ypos_lab, label = label),
+    inherit.aes = FALSE,
+    size = 5
+  ) +
+  
+  scale_fill_manual(values = c(
+    "EU" = "#F0746A",
+    "Norge" = "#00BA38",
+    "ROW" = "#5B8DE8"
+  )) +
+  
+  labs(
+    title = "Produsentenes markedsandeler i 2035",
+    subtitle = "Scenario 1 og Scenario 2A–2D",
+    fill = "Produsent"
+  ) +
+  
+  theme_void(base_size = 16) +
+  theme(
+    plot.title = element_text(size = 28, face = "bold"),
+    plot.subtitle = element_text(size = 20),
+    strip.text = element_text(size = 18, face = "bold"),
+    legend.position = "right"
+  )
 # ============================================================
 # RUN_SENSITIVITY()
 # ------------------------------------------------------------
@@ -1143,7 +1350,7 @@ sens_S1_carbon_high <- run_sensitivity(
 sens_S1_carbon_highest <- run_sensitivity(
   par_scenario = Scenario_1,
   scenario_name = "Scenario 1",
-  case_name = " Highest carbon price",
+  case_name = " Very high carbon price",
   beta_start = 0,
   beta_end = 0,
   alpha_eu_path = rep(0, length(2025:2035)),
@@ -1213,10 +1420,23 @@ sens_S2_carbon_high <- run_sensitivity(
   P_CO2_new = 145
 )
 
+sens_S2_carbon_highest <- run_sensitivity(
+  par_scenario = Scenario_2A,
+  scenario_name = "Scenario 2",
+  case_name = "Very high carbon price",
+  beta_start = 0.69,
+  beta_end = 0,
+  alpha_eu_path = rep(0.50, length(2025:2035)),
+  alpha_no_path = rep(0.42, length(2025:2035)),
+  gamma_cbam_path = c(0, rep(1, length(2026:2035))),
+  P_CO2_new = 200
+)
+
 sens_S2_carbon <- bind_rows(
   sens_S2_carbon_low,
   sens_S2_carbon_base,
-  sens_S2_carbon_high
+  sens_S2_carbon_high,
+  sens_S2_carbon_highest
 )
 
 sens_S2_carbon_2025_2035 <- sens_S2_carbon %>%
@@ -1699,6 +1919,12 @@ cat("x_eu:", round(eq_2035_longrun$x_eu, 4), "\n")
 cat("x_no:", round(eq_2035_longrun$x_no, 4), "\n")
 cat("x_row:", round(eq_2035_longrun$x_row, 4), "\n")
 cat("===================================\n\n")
+
+
+
+
+
+
 # ============================================================
 # PLOTDATA – SENSITIVITET KARBONPRIS
 # ------------------------------------------------------------
@@ -1775,10 +2001,10 @@ ggplot(plot_carbon_sens, aes(x = x_group, y = pct_change, fill = variable)) +
   )
 
 
-
 # ============================================================
 # PLOTDATA – PRODUKSJON (x_eu, x_no, x_row)
-# Karbonpris sensitivitet
+# Karbonpris sensitivitet – relativt til base
+# Viser kun Very high, High og Low
 # ============================================================
 
 plot_prod_sens <- bind_rows(
@@ -1786,7 +2012,12 @@ plot_prod_sens <- bind_rows(
   sens_S2_carbon %>% mutate(model_scenario = "Scenario 2")
 ) %>%
   filter(year == 2035) %>%
-  filter(case %in% c("Low carbon price", "Base carbon price", "High carbon price")) %>%
+  filter(case %in% c(
+    "Low carbon price",
+    "Base carbon price",
+    "High carbon price",
+    "Very high carbon price"
+  )) %>%
   select(model_scenario, case, x_eu, x_no, x_row) %>%
   pivot_longer(
     cols = c(x_eu, x_no, x_row),
@@ -1802,6 +2033,7 @@ plot_prod_sens <- bind_rows(
   filter(case != "Base carbon price") %>%
   mutate(
     sensitivity_side = case_when(
+      case == "Very high carbon price" ~ "Very high",
       case == "High carbon price" ~ "High",
       case == "Low carbon price" ~ "Low"
     ),
@@ -1815,6 +2047,7 @@ plot_prod_sens <- bind_rows(
 
 print(plot_prod_sens)
 
+#Graf 
 
 ggplot(plot_prod_sens, aes(x = x_group, y = pct_change, fill = region)) +
   geom_col(
@@ -1831,17 +2064,26 @@ ggplot(plot_prod_sens, aes(x = x_group, y = pct_change, fill = region)) +
   ) +
   geom_hline(yintercept = 0, linewidth = 0.5) +
   geom_vline(xintercept = 2.5, linetype = "dashed", color = "grey50") +
-  annotate("text", x = 1.5, y = max(plot_prod_sens$pct_change) + 5, label = "High", size = 5, fontface = "bold") +
-  annotate("text", x = 3.5, y = max(plot_prod_sens$pct_change) + 5, label = "Low", size = 5, fontface = "bold") +
+  geom_vline(xintercept = 4.5, linetype = "dashed", color = "grey50") +
+  annotate("text", x = 1.5, y = max(plot_prod_sens$pct_change) + 5, label = "Very high", size = 5, fontface = "bold") +
+  annotate("text", x = 3.5, y = max(plot_prod_sens$pct_change) + 5, label = "High", size = 5, fontface = "bold") +
+  annotate("text", x = 5.5, y = max(plot_prod_sens$pct_change) + 5, label = "Low", size = 5, fontface = "bold") +
   scale_x_discrete(labels = c(
+    "Very high - Scenario 1" = "S1",
+    "Very high - Scenario 2" = "S2",
     "High - Scenario 1" = "S1",
     "High - Scenario 2" = "S2",
-    "Low - Scenario 1"  = "S1",
-    "Low - Scenario 2"  = "S2"
+    "Low - Scenario 1" = "S1",
+    "Low - Scenario 2" = "S2"
+  )) +
+  scale_fill_manual(values = c(
+    "EU" = "#F0746A",
+    "Norge" = "#00BA38",
+    "ROW" = "#5B8DE8"
   )) +
   labs(
     title = "Sensitivitetsanalyse: karbonpris",
-    subtitle = "Prosentvis endring i produksjon fra basis (2035)",
+    subtitle = "Prosentvis endring i produksjon relativt til basis (2035)",
     x = NULL,
     y = "Prosentvis endring (%)",
     fill = NULL
@@ -1851,7 +2093,6 @@ ggplot(plot_prod_sens, aes(x = x_group, y = pct_change, fill = region)) +
     axis.text.x = element_text(size = 12, face = "bold"),
     plot.title = element_text(face = "bold")
   )
-
 
 
 
