@@ -2333,3 +2333,60 @@ ggplot(plot_longrun_simple, aes(x = variable, y = pct_change, fill = variable)) 
     plot.title = element_text(size = 20, face = "bold"),
     plot.subtitle = element_text(size = 14)
   )
+
+# Kritisk CO2-pris for CCS i EU og CCS cost for CO2-pris 
+calc_break_even_CO2 <- function(C_CCS, I_eu){
+  C_CCS / I_eu
+}
+
+calc_break_even_CO2(180, 0.72)
+calc_break_even_CO2(90, 0.72)
+
+calc_break_even_CCS <- function(P_CO2, I_eu){
+  P_CO2 * I_eu
+}
+
+calc_break_even_CCS(65, 0.72)
+calc_break_even_CCS(200, 0.72)
+library(ggplot2)
+library(dplyr)
+
+# ============================================================
+# BREAK-EVEN FIGUR FOR CCS I EU
+# ------------------------------------------------------------
+# CCS er lønnsomt når:
+# P_CO2 * I_eu > C_CCS
+#
+# Figuren viser break-even-linjen for ulike CO2-priser og
+# CCS-kostnader, gitt utslippsintensitet i EU.
+# ============================================================
+
+I_eu_used <- Base_Parameter$I_eu
+
+break_even_data <- data.frame(
+  P_CO2 = seq(0, 300, by = 1)
+) %>%
+  mutate(
+    C_CCS_break_even = P_CO2 * I_eu_used
+  )
+
+ggplot(break_even_data, aes(x = P_CO2, y = C_CCS_break_even)) +
+  geom_line(linewidth = 1) +
+  annotate("text", x = 220, y = 110, label = "CCS profitabelt under linjen", size = 5) +
+  annotate("text", x = 150, y = 170, label = "CCS ikke profitabelt over linjen", size = 5) +
+  geom_point(aes(x = 65, y = 180), size = 3) +
+  geom_text(aes(x = 65, y = 180, label = "Dagens"), vjust = -1, size = 4) +
+  geom_point(aes(x = 125, y = 90), size = 3) +
+  geom_text(aes(x = 125, y = 90, label = "Lav CCS-kostnad"), vjust = -1, size = 4) +
+  geom_point(aes(x = 200, y = 90), size = 3) +
+  geom_text(aes(x = 200, y = 90, label = "2035-scenario"), vjust = -1, size = 4) +
+  labs(
+    title = "Break-even for CCS i EU",
+    subtitle = "CCS karbonkostnaden overstiger CCS-kostnaden",
+    x = expression("CO"[2] * "-pris (€/tCO"[2] * ")"),
+    y = "CCS-kostnad (€/tonn sement)"
+  ) +
+  theme_minimal(base_size = 16) +
+  theme(
+    plot.title = element_text(face = "bold")
+  )
