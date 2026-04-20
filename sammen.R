@@ -1350,7 +1350,7 @@ sens_S1_carbon_high <- run_sensitivity(
 sens_S1_carbon_highest <- run_sensitivity(
   par_scenario = Scenario_1,
   scenario_name = "Scenario 1",
-  case_name = " Very high carbon price",
+  case_name = "Very high carbon price",
   beta_start = 0,
   beta_end = 0,
   alpha_eu_path = rep(0, length(2025:2035)),
@@ -2033,20 +2033,31 @@ plot_prod_sens <- bind_rows(
   filter(case != "Base carbon price") %>%
   mutate(
     sensitivity_side = case_when(
-      case == "Very high carbon price" ~ "Very high",
+      case == "Low carbon price" ~ "Low",
       case == "High carbon price" ~ "High",
-      case == "Low carbon price" ~ "Low"
+      case == "Very high carbon price" ~ "Very high"
+    ),
+    sensitivity_side = factor(
+      sensitivity_side,
+      levels = c("Low", "High", "Very high")
     ),
     region = recode(region,
                     x_eu = "EU",
                     x_no = "Norge",
                     x_row = "ROW"
     ),
-    x_group = paste(sensitivity_side, model_scenario, sep = " - ")
+    x_group = paste(sensitivity_side, model_scenario, sep = " - "),
+    x_group = factor(
+      x_group,
+      levels = c(
+        "Low - Scenario 1", "Low - Scenario 2",
+        "High - Scenario 1", "High - Scenario 2",
+        "Very high - Scenario 1", "Very high - Scenario 2"
+      )
+    )
   )
 
 print(plot_prod_sens)
-
 #Graf 
 
 ggplot(plot_prod_sens, aes(x = x_group, y = pct_change, fill = region)) +
@@ -2065,16 +2076,16 @@ ggplot(plot_prod_sens, aes(x = x_group, y = pct_change, fill = region)) +
   geom_hline(yintercept = 0, linewidth = 0.5) +
   geom_vline(xintercept = 2.5, linetype = "dashed", color = "grey50") +
   geom_vline(xintercept = 4.5, linetype = "dashed", color = "grey50") +
-  annotate("text", x = 1.5, y = max(plot_prod_sens$pct_change) + 5, label = "Very high", size = 5, fontface = "bold") +
+  annotate("text", x = 1.5, y = max(plot_prod_sens$pct_change) + 5, label = "Low", size = 5, fontface = "bold") +
   annotate("text", x = 3.5, y = max(plot_prod_sens$pct_change) + 5, label = "High", size = 5, fontface = "bold") +
-  annotate("text", x = 5.5, y = max(plot_prod_sens$pct_change) + 5, label = "Low", size = 5, fontface = "bold") +
+  annotate("text", x = 5.5, y = max(plot_prod_sens$pct_change) + 5, label = "Very high", size = 5, fontface = "bold") +
   scale_x_discrete(labels = c(
-    "Very high - Scenario 1" = "S1",
-    "Very high - Scenario 2" = "S2",
+    "Low - Scenario 1" = "S1",
+    "Low - Scenario 2" = "S2",
     "High - Scenario 1" = "S1",
     "High - Scenario 2" = "S2",
-    "Low - Scenario 1" = "S1",
-    "Low - Scenario 2" = "S2"
+    "Very high - Scenario 1" = "S1",
+    "Very high - Scenario 2" = "S2"
   )) +
   scale_fill_manual(values = c(
     "EU" = "#F0746A",
@@ -2093,7 +2104,6 @@ ggplot(plot_prod_sens, aes(x = x_group, y = pct_change, fill = region)) +
     axis.text.x = element_text(size = 12, face = "bold"),
     plot.title = element_text(face = "bold")
   )
-
 
 
 # ============================================================
