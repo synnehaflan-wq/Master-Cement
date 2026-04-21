@@ -2334,6 +2334,8 @@ ggplot(plot_longrun_simple, aes(x = variable, y = pct_change, fill = variable)) 
     plot.subtitle = element_text(size = 14)
   )
 
+
+#===================================================
 # Kritisk CO2-pris for CCS i EU og CCS cost for CO2-pris 
 calc_break_even_CO2 <- function(C_CCS, I_eu){
   C_CCS / I_eu
@@ -2370,22 +2372,82 @@ break_even_data <- data.frame(
     C_CCS_break_even = P_CO2 * I_eu_used
   )
 
+# Scenario-punkter (faktiske kombinasjoner)
+scenario_points <- data.frame(
+  label = c(
+    "Ref 1",
+    "Lav CCS-kostnad",
+    "CO2 + lav CCS"
+  ),
+  P_CO2 = c(65, 65, 200),
+  C_CCS = c(180, 90, 90)
+)
+
+# Break-even punkter (fra dine beregninger)
+breakeven_points <- data.frame(
+  label = c(
+    "Break-even (180)",
+    "Break-even (90)",
+    "Break-even ved 65€",
+    "Break-even ved 200€"
+  ),
+  P_CO2 = c(
+    250,  # for 180
+    125,  # for 90
+    65,   # gitt
+    200
+  ),
+  C_CCS = c(
+    180,
+    90,
+    46.8,
+    144
+  )
+)
+
 ggplot(break_even_data, aes(x = P_CO2, y = C_CCS_break_even)) +
   geom_line(linewidth = 1) +
-  annotate("text", x = 220, y = 110, label = "CCS profitabelt under linjen", size = 5) +
-  annotate("text", x = 150, y = 170, label = "CCS ikke profitabelt over linjen", size = 5) +
-  geom_point(aes(x = 65, y = 180), size = 3) +
-  geom_text(aes(x = 65, y = 180, label = "Dagens"), vjust = -1, size = 4) +
-  geom_point(aes(x = 125, y = 90), size = 3) +
-  geom_text(aes(x = 125, y = 90, label = "Lav CCS-kostnad"), vjust = -1, size = 4) +
-  geom_point(aes(x = 200, y = 90), size = 3) +
-  geom_text(aes(x = 200, y = 90, label = "2035-scenario"), vjust = -1, size = 4) +
+  
+  # Forklaringsområder
+  annotate("text", x = 210, y = 80, label = "CCS kostnadseffektivt", size = 5) +
+  annotate("text", x = 150, y = 170, label = "CCS ikke kostnadseffektivt", size = 5) +
+  
+  # Scenario-punkter (svart)
+  geom_point(
+    data = scenario_points,
+    aes(x = P_CO2, y = C_CCS),
+    size = 3,
+    color = "black"
+  ) +
+  geom_text(
+    data = scenario_points,
+    aes(x = P_CO2, y = C_CCS, label = label),
+    vjust = -1,
+    size = 4
+  ) +
+  
+  # Break-even punkter (rød)
+  geom_point(
+    data = breakeven_points,
+    aes(x = P_CO2, y = C_CCS),
+    size = 3,
+    color = "red"
+  ) +
+  geom_text(
+    data = breakeven_points,
+    aes(x = P_CO2, y = C_CCS, label = label),
+    vjust = 1.5,
+    size = 3.5,
+    color = "red"
+  ) +
+  
   labs(
     title = "Break-even for CCS i EU",
     subtitle = "CCS karbonkostnaden overstiger CCS-kostnaden",
     x = expression("CO"[2] * "-pris (€/tCO"[2] * ")"),
     y = "CCS-kostnad (€/tonn sement)"
   ) +
+  
   theme_minimal(base_size = 16) +
   theme(
     plot.title = element_text(face = "bold")
