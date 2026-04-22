@@ -57,8 +57,8 @@ Base_Parameter <- list(
 MC_eu <- function(x, p){ # EU sin MC
   p$C0_eu +
     p$C1_eu * x +
-    p$P_CO2 * p$I_eu * (1 - p$alpha_eu) +
-    p$alpha_eu * p$rho_eu * (1 - p$s_eu) * p$C_CCS_eu -
+    p$P_CO2 * p$I_eu * (1 - p$rho_eu * p$alpha_eu) +
+    p$rho_eu * p$alpha_eu * (1 - p$s_eu) * p$C_CCS_eu -
     p$P_CO2 * p$beta
 }
 
@@ -176,8 +176,10 @@ Base_Parameter$A <- calib_2024$Q_target * (calib_2024$P_target ^ Base_Parameter$
 # (2) Policy-ledd i basisåret
 # ------------------------------------------------------------
 
-policy_eu_2024 <- Base_Parameter$P_CO2 * Base_Parameter$I_eu * (1 - Base_Parameter$alpha_eu) +
-  Base_Parameter$alpha_eu * Base_Parameter$rho_eu * (1 - Base_Parameter$s_eu) * Base_Parameter$C_CCS_eu -
+policy_eu_2024 <- Base_Parameter$P_CO2 * Base_Parameter$I_eu * 
+  (1 - Base_Parameter$rho_eu * Base_Parameter$alpha_eu) +
+  Base_Parameter$rho_eu * Base_Parameter$alpha_eu * 
+  (1 - Base_Parameter$s_eu) * Base_Parameter$C_CCS_eu -
   Base_Parameter$P_CO2 * Base_Parameter$beta
 
 
@@ -1466,8 +1468,8 @@ print(sens_S2_carbon_2025_2035)
 Scenario_1_CCS_low <- Scenario_1
 Scenario_1_CCS_low$C_CCS_eu <- 90
 Scenario_1_CCS_low$C_CCS_no <- 90
-Scenario_1_CCS_low$S_eu <- 0.65 * Scenario_1_CCS_low$C_CCS_eu
-Scenario_1_CCS_low$S_no <- 0.65 * Scenario_1_CCS_low$C_CCS_no
+Scenario_1_CCS_low$s_eu <- 0.65 * Scenario_1_CCS_low$C_CCS_eu
+Scenario_1_CCS_low$s_no <- 0.65 * Scenario_1_CCS_low$C_CCS_no
 
 path_S1_lowCCS <- simulate_path(
   Scenario_1_CCS_low,
@@ -1490,8 +1492,8 @@ path_S1_lowCCS$case <- "Low CCS cost"
 Scenario_1_CCS_base <- Scenario_1
 Scenario_1_CCS_base$C_CCS_eu <- 180
 Scenario_1_CCS_base$C_CCS_no <- 180
-Scenario_1_CCS_base$S_eu <- 0.65 * Scenario_1_CCS_base$C_CCS_eu
-Scenario_1_CCS_base$S_no <- 0.65 * Scenario_1_CCS_base$C_CCS_no
+Scenario_1_CCS_base$s_eu <- 0.65 * Scenario_1_CCS_base$C_CCS_eu
+Scenario_1_CCS_base$s_no <- 0.65 * Scenario_1_CCS_base$C_CCS_no
 
 path_S1_baseCCS <- simulate_path(
   Scenario_1_CCS_base,
@@ -1514,8 +1516,8 @@ path_S1_baseCCS$case <- "Base CCS cost"
 Scenario_1_CCS_high <- Scenario_1
 Scenario_1_CCS_high$C_CCS_eu <- 240
 Scenario_1_CCS_high$C_CCS_no <- 240
-Scenario_1_CCS_high$S_eu <- 0.65 * Scenario_1_CCS_high$C_CCS_eu
-Scenario_1_CCS_high$S_no <- 0.65 * Scenario_1_CCS_high$C_CCS_no
+Scenario_1_CCS_high$s_eu <- 0.65 * Scenario_1_CCS_high$C_CCS_eu
+Scenario_1_CCS_high$s_no <- 0.65 * Scenario_1_CCS_high$C_CCS_no
 
 path_S1_highCCS <- simulate_path(
   Scenario_1_CCS_high,
