@@ -2454,3 +2454,118 @@ ggplot(break_even_data, aes(x = P_CO2, y = C_CCS_break_even)) +
   theme(
     plot.title = element_text(face = "bold")
   )
+
+
+
+
+plot_marketshare <- path_S2A %>%
+  filter(year == 2035) %>%
+  select(x_eu, x_no, x_row) %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = "producer",
+    values_to = "value"
+  ) %>%
+  mutate(
+    producer = recode(producer,
+                      x_eu = "EU",
+                      x_no = "Norge",
+                      x_row = "ROW")
+  )%>%
+  mutate(
+    share = 100 * value / sum(value),
+    label = paste0(round(share, 1), "%"),
+    ypos = cumsum(share) - 0.5 * share,
+    ypos_label = case_when(
+      producer == "Norge" ~ ypos - 9,
+      producer == "ROW"   ~ ypos + 2,
+      TRUE ~ ypos
+    )
+  )
+
+ggplot(plot_marketshare, aes(x = 2, y = share, fill = producer)) +
+  geom_col(width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  xlim(1.43, 2.8) +
+  
+  geom_label(
+    aes(x = 2, y = ypos_label, label = label, fill = producer),
+    size = 4,
+    show.legend = FALSE,
+    color = "black"
+  ) +
+  
+  scale_fill_manual(values = c(
+    "EU" = "#F0746A",
+    "Norge" = "#00BA38",
+    "ROW" = "#5B8DE8"
+  )) +
+  
+  labs(
+    title = "Produsentenes markedsandel",
+    subtitle = "Scenario 2A: CBAM + CCS (2035)",
+    fill = "Produsent"
+  ) +
+  
+  theme_void(base_size = 16) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 16),
+    legend.position = "right"
+  )
+
+
+plot_marketshare_S1_2035 <- path_S1 %>%
+  filter(year == 2035) %>%
+  select(x_eu, x_no, x_row) %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = "producer",
+    values_to = "value"
+  ) %>%
+  mutate(
+    producer = recode(producer,
+                      x_eu = "EU",
+                      x_no = "Norge",
+                      x_row = "ROW"
+    ),
+    share = 100 * value / sum(value),
+    label = paste0(round(share, 1), "%"),
+    ypos = cumsum(share) - 0.5 * share,
+    ypos_label = case_when(
+      producer == "Norge" ~ ypos - 9,
+      producer == "ROW"   ~ ypos + 2,
+      TRUE ~ ypos
+    )
+  )
+
+ggplot(plot_marketshare_S1_2035, aes(x = 2, y = share, fill = producer)) +
+  geom_col(width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  xlim(1.43, 2.8) +
+  
+  geom_label(
+    aes(x = 2, y = ypos_label, label = label, fill = producer),
+    size = 4,
+    show.legend = FALSE,
+    color = "black"
+  ) +
+  
+  scale_fill_manual(values = c(
+    "EU" = "#F0746A",
+    "Norge" = "#00BA38",
+    "ROW" = "#5B8DE8"
+  )) +
+  
+  labs(
+    title = "Produsentenes markedsandel",
+    subtitle = "Scenario 1: CBAM (2035)",
+    fill = "Produsent"
+  ) +
+  
+  theme_void(base_size = 16) +
+  theme(
+    plot.title = element_text(size = 18, face = "bold"),
+    plot.subtitle = element_text(size = 16),
+    legend.position = "right"
+  )
