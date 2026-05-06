@@ -1464,12 +1464,9 @@ print(sens_S2_carbon_2025_2035)
 # Senario 1
 # --------
 # Lav CCS-kostnad
-# --------
 Scenario_1_CCS_low <- Scenario_1
 Scenario_1_CCS_low$C_CCS_eu <- 90
 Scenario_1_CCS_low$C_CCS_no <- 90
-Scenario_1_CCS_low$s_eu <- 0.65 * Scenario_1_CCS_low$C_CCS_eu
-Scenario_1_CCS_low$s_no <- 0.65 * Scenario_1_CCS_low$C_CCS_no
 
 path_S1_lowCCS <- simulate_path(
   Scenario_1_CCS_low,
@@ -1482,18 +1479,13 @@ path_S1_lowCCS <- simulate_path(
   alpha_no_path = rep(0.42, length(2025:2035)),
   gamma_cbam_path = c(0, rep(1, length(2026:2035)))
 )
-
 path_S1_lowCCS$case <- "Low CCS cost"
 
 
-# --------
 # Basis CCS-kostnad
-# --------
 Scenario_1_CCS_base <- Scenario_1
 Scenario_1_CCS_base$C_CCS_eu <- 180
 Scenario_1_CCS_base$C_CCS_no <- 180
-Scenario_1_CCS_base$s_eu <- 0.65 * Scenario_1_CCS_base$C_CCS_eu
-Scenario_1_CCS_base$s_no <- 0.65 * Scenario_1_CCS_base$C_CCS_no
 
 path_S1_baseCCS <- simulate_path(
   Scenario_1_CCS_base,
@@ -1506,18 +1498,13 @@ path_S1_baseCCS <- simulate_path(
   alpha_no_path = rep(0.42, length(2025:2035)),
   gamma_cbam_path = c(0, rep(1, length(2026:2035)))
 )
-
 path_S1_baseCCS$case <- "Base CCS cost"
 
 
-# --------
 # Høy CCS-kostnad
-# --------
 Scenario_1_CCS_high <- Scenario_1
 Scenario_1_CCS_high$C_CCS_eu <- 240
 Scenario_1_CCS_high$C_CCS_no <- 240
-Scenario_1_CCS_high$s_eu <- 0.65 * Scenario_1_CCS_high$C_CCS_eu
-Scenario_1_CCS_high$s_no <- 0.65 * Scenario_1_CCS_high$C_CCS_no
 
 path_S1_highCCS <- simulate_path(
   Scenario_1_CCS_high,
@@ -1530,34 +1517,22 @@ path_S1_highCCS <- simulate_path(
   alpha_no_path = rep(0.42, length(2025:2035)),
   gamma_cbam_path = c(0, rep(1, length(2026:2035)))
 )
-
 path_S1_highCCS$case <- "High CCS cost"
 
-
-sens_S1_CCS <- bind_rows(
-  path_S1_lowCCS,
-  path_S1_baseCCS,
-  path_S1_highCCS
-)
-
-
-# TABELL FOR 2025 OG 2035
-
-sens_S1_CCS_2025_2035 <- sens_S1_CCS %>%
-  filter(year %in% c(2025, 2035)) %>%
-  select(case, year, P, Q, x_eu, x_no, x_row) %>%
-  arrange(case, year) %>%
-  mutate(
-    P = round(P, 2),
-    Q = round(Q, 2),
-    x_eu = round(x_eu, 2),
-    x_no = round(x_no, 2),
-    x_row = round(x_row, 2)
-  )
+sens_S1_CCS <- bind_rows( path_S1_lowCCS,
+                          path_S1_baseCCS, 
+                          path_S1_highCCS )
+# TABELL FOR 2025 OG 2035 
+sens_S1_CCS_2025_2035 <- sens_S1_CCS %>% filter(year %in% c(2025, 2035)) %>% 
+  select(case, year, P, Q, x_eu, x_no, x_row) %>% 
+  arrange(case, year) %>% 
+  mutate( P = round(P, 2),
+          Q = round(Q, 2), 
+          x_eu = round(x_eu, 2),
+          x_no = round(x_no, 2), 
+          x_row = round(x_row, 2) ) 
 
 print(sens_S1_CCS_2025_2035)
-
-
 # ============================================================
 # SENSITIVITETSANALYSE – SCENARIO 2
 # CCS-KOSTNAD
